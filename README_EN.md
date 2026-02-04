@@ -13,6 +13,7 @@
   <a href="#core-capabilities">Core Capabilities</a> ·
   <a href="#usage">Usage</a> ·
   <a href="#faq">FAQ</a>
+  <a href="README.md">中文ChineseVersion</a>
 </p>
 
 <p align="center">
@@ -23,7 +24,7 @@
 
 ---
 
-## ✨ Introduction
+## Introduction
 
 This is a minimalist tool designed to solve the chaos often found in Word document formatting. Featuring a modern, paper-like UI design, it intelligently identifies issues with punctuation, layout, and fonts, and automatically repairs them according to the Chinese National Standard (**GB/T 9704-2012** for China Communist Party and Government Organs).
 
@@ -34,7 +35,7 @@ This is a minimalist tool designed to solve the chaos often found in Word docume
 
 ---
 
-## 🔧 Core Capabilities
+## Core Capabilities
 
 This tool is more than just a simple format painter. It deeply analyzes and fixes **8 major categories** of common formatting pain points:
 
@@ -49,7 +50,7 @@ This tool is more than just a simple format painter. It deeply analyzes and fixe
 
 ---
 
-## 📥 Download
+## Download
 
 ### Windows Users
 
@@ -64,7 +65,7 @@ This tool is more than just a simple format painter. It deeply analyzes and fixe
 
 ---
 
-## 📖 Usage
+## Usage
 
 ### Step 1: Select File
 Click the "Input" (输入) field at the top of the interface to select the Word document you want to process.
@@ -85,7 +86,7 @@ Click the prominent **"Start Processing" (开始处理)** button in the middle.
 
 ---
 
-## ❓ FAQ
+## FAQ
 
 **Q: Why is the processed document displaying garbled text or incorrect fonts?**
 A: Official Chinese document formatting relies on specific fonts. Please ensure your computer has the following fonts installed (usually standard on Windows):
@@ -101,7 +102,7 @@ A: The current version focuses on precise single-file processing. Batch processi
 
 ---
 
-## 🤝 Feedback
+## Feedback
 
 If this tool helps you, or if you find any bugs, please feel free to contact me:
 
@@ -110,7 +111,7 @@ If this tool helps you, or if you find any bugs, please feel free to contact me:
 
 ---
 
-## 📄 License
+## License
 
 This project is open-source under the [MIT License](LICENSE).
 
