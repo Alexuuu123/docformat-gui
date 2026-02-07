@@ -93,51 +93,66 @@ DEFAULT_CUSTOM_SETTINGS = {
     'page': {'top': 3.7, 'bottom': 3.5, 'left': 2.8, 'right': 2.6},
     'title': {
         'font_cn': '方正小标宋简体', 'font_en': 'Times New Roman',
-        'size': 22, 'bold': False, 'align': 'center', 'indent': 0
+        'size': 22, 'bold': False, 'align': 'center', 'indent': 0,
+        'line_spacing': 28, 'space_before': 0, 'space_after': 0
     },
     'recipient': {
         'font_cn': '仿宋_GB2312', 'font_en': 'Times New Roman',
-        'size': 16, 'bold': False, 'align': 'left', 'indent': 0
+        'size': 16, 'bold': False, 'align': 'left', 'indent': 0,
+        'line_spacing': 28, 'space_before': 0, 'space_after': 0
     },
     'heading1': {
         'font_cn': '黑体', 'font_en': 'Times New Roman',
-        'size': 16, 'bold': False, 'align': 'left', 'indent': 32
+        'size': 16, 'bold': False, 'align': 'left', 'indent': 32,
+        'line_spacing': 28, 'space_before': 0, 'space_after': 0
     },
     'heading2': {
         'font_cn': '楷体_GB2312', 'font_en': 'Times New Roman',
-        'size': 16, 'bold': False, 'align': 'left', 'indent': 32
+        'size': 16, 'bold': False, 'align': 'left', 'indent': 32,
+        'line_spacing': 28, 'space_before': 0, 'space_after': 0
     },
     'heading3': {
         'font_cn': '仿宋_GB2312', 'font_en': 'Times New Roman',
-        'size': 16, 'bold': False, 'align': 'left', 'indent': 32
+        'size': 16, 'bold': False, 'align': 'left', 'indent': 32,
+        'line_spacing': 28, 'space_before': 0, 'space_after': 0
     },
     'heading4': {
         'font_cn': '仿宋_GB2312', 'font_en': 'Times New Roman',
-        'size': 16, 'bold': False, 'align': 'left', 'indent': 32
+        'size': 16, 'bold': False, 'align': 'left', 'indent': 32,
+        'line_spacing': 28, 'space_before': 0, 'space_after': 0
     },
     'body': {
         'font_cn': '仿宋_GB2312', 'font_en': 'Times New Roman',
         'size': 16, 'bold': False, 'align': 'justify',
-        'indent': 32, 'line_spacing': 28
+        'indent': 32, 'line_spacing': 28, 'space_before': 0, 'space_after': 0
     },
     'signature': {
         'font_cn': '仿宋_GB2312', 'font_en': 'Times New Roman',
-        'size': 16, 'bold': False, 'align': 'right', 'indent': 0
+        'size': 16, 'bold': False, 'align': 'right', 'indent': 0,
+        'line_spacing': 28, 'space_before': 0, 'space_after': 0
     },
     'date': {
         'font_cn': '仿宋_GB2312', 'font_en': 'Times New Roman',
-        'size': 16, 'bold': False, 'align': 'right', 'indent': 0
+        'size': 16, 'bold': False, 'align': 'right', 'indent': 0,
+        'line_spacing': 28, 'space_before': 0, 'space_after': 0
     },
     'attachment': {
         'font_cn': '仿宋_GB2312', 'font_en': 'Times New Roman',
-        'size': 16, 'bold': False, 'align': 'justify', 'indent': 32
+        'size': 16, 'bold': False, 'align': 'justify', 'indent': 32,
+        'line_spacing': 28, 'space_before': 0, 'space_after': 0
     },
     'closing': {
         'font_cn': '仿宋_GB2312', 'font_en': 'Times New Roman',
-        'size': 16, 'bold': False, 'align': 'left', 'indent': 32
+        'size': 16, 'bold': False, 'align': 'left', 'indent': 32,
+        'line_spacing': 28, 'space_before': 0, 'space_after': 0
     },
-    'first_line_bold': False,  # 首句加粗
-    'page_number': True,  # 页码
+    'table': {
+        'font_cn': '仿宋_GB2312', 'font_en': 'Times New Roman',
+        'size': 12, 'bold': False, 'line_spacing': 22,
+        'first_line_indent': 0, 'header_bold': True
+    },
+    'first_line_bold': False,
+    'page_number': True,
 }
 
 
@@ -176,21 +191,27 @@ def save_custom_settings(settings):
         raise
 
 
+
+# ===== 快速设置中，正文字体联动的元素 =====
+BODY_FONT_GROUP = ['body', 'heading3', 'heading4', 'closing', 'attachment', 'signature', 'date']
+
+
 class CustomSettingsDialog(tk.Toplevel):
-    """自定义格式设置弹窗 - 支持滚动和调整大小"""
+    """自定义格式设置弹窗 - 快速设置 + 高级设置（可折叠）"""
     
     def __init__(self, parent, on_save=None):
         super().__init__(parent)
         
         self.on_save = on_save
         self.settings = load_custom_settings()
+        self._adv_vars = {}  # 高级模式的变量存储
         
-        # 窗口设置 - 允许调整大小
+        # 窗口设置
         self.title("自定义格式设置")
-        self.geometry("780x820")
-        self.minsize(720, 700)  # 最小尺寸
+        self.geometry("800x860")
+        self.minsize(740, 700)
         self.configure(bg=Theme.BG)
-        self.resizable(True, True)  # 允许调整大小
+        self.resizable(True, True)
         
         # 模态窗口
         self.transient(parent)
@@ -199,35 +220,28 @@ class CustomSettingsDialog(tk.Toplevel):
         
         # 居中显示
         self.update_idletasks()
-        x = parent.winfo_x() + (parent.winfo_width() - 780) // 2
-        y = parent.winfo_y() + (parent.winfo_height() - 820) // 2
+        x = parent.winfo_x() + (parent.winfo_width() - 800) // 2
+        y = parent.winfo_y() + (parent.winfo_height() - 860) // 2
         self.geometry(f"+{max(0, x)}+{max(0, y)}")
         
         self._create_widgets()
-        # 确保所有控件完全渲染后再加载值
-        self.update_idletasks()
         self._load_values()
-        self.update_idletasks()
-        # 延迟再加载一次，作为双重保险
-        # （某些 tkinter 版本中 OptionMenu 可能在事件循环中重置 textvariable）
-        self.after(50, self._load_values)
+    
+    # ==================== 界面构建 ====================
     
     def _create_widgets(self):
-        """创建控件 - 带滚动条"""
-        # ===== 顶部标题（固定） =====
+        """创建控件 - 快速设置 + 可折叠高级设置"""
+        # ===== 顶部标题 + 按钮（固定） =====
         header = tk.Frame(self, bg=Theme.BG)
-        header.pack(fill='x', padx=20, pady=(15, 10))
+        header.pack(fill='x', padx=20, pady=(15, 5))
         
         tk.Label(
             header, text="⚙️ 自定义格式设置", font=get_font(16, 'bold'),
             bg=Theme.BG, fg=Theme.TEXT
-        ).pack(anchor='w')
+        ).pack(side='left')
         
-        # 顶部操作区（始终可见）
-        action_bar = tk.Frame(self, bg=Theme.BG)
-        action_bar.pack(fill='x', padx=20, pady=(0, 10))
-        
-        save_top = tk.Frame(action_bar, bg=Theme.PRIMARY, cursor='hand2')
+        # 保存按钮（顶部）
+        save_top = tk.Frame(header, bg=Theme.PRIMARY, cursor='hand2')
         save_top.pack(side='right')
         save_top_label = tk.Label(
             save_top, text="  保存设置  ", font=get_font(12, 'bold'),
@@ -240,262 +254,203 @@ class CustomSettingsDialog(tk.Toplevel):
             w.bind('<Leave>', lambda e: (save_top.configure(bg=Theme.PRIMARY), save_top_label.configure(bg=Theme.PRIMARY)))
         
         cancel_top = tk.Label(
-            action_bar, text="取消", font=get_font(11),
+            header, text="取消", font=get_font(11),
             bg=Theme.BG, fg=Theme.TEXT_SECONDARY, cursor='hand2', padx=10
         )
         cancel_top.pack(side='right', padx=(0, 10))
         cancel_top.bind('<Button-1>', lambda e: self._on_close())
         
-        # ===== 中间滚动区域 =====
+        # ===== 滚动区域 =====
         scroll_container = tk.Frame(self, bg=Theme.BG)
         scroll_container.pack(fill='both', expand=True, padx=5)
         
-        # Canvas + Scrollbar
         self.canvas = tk.Canvas(scroll_container, bg=Theme.BG, highlightthickness=0)
         scrollbar = tk.Scrollbar(scroll_container, orient='vertical', command=self.canvas.yview)
-        h_scrollbar = tk.Scrollbar(scroll_container, orient='horizontal', command=self.canvas.xview)
         
-        self.canvas.configure(yscrollcommand=scrollbar.set, xscrollcommand=h_scrollbar.set)
-        
+        self.canvas.configure(yscrollcommand=scrollbar.set)
         scrollbar.pack(side='right', fill='y')
-        h_scrollbar.pack(side='bottom', fill='x')
         self.canvas.pack(side='left', fill='both', expand=True)
         
-        # 内容Frame
         self.content_frame = tk.Frame(self.canvas, bg=Theme.BG)
         self.canvas_window = self.canvas.create_window((0, 0), window=self.content_frame, anchor='nw')
         
-        # 绑定事件
         self.content_frame.bind('<Configure>', self._on_frame_configure)
         self.canvas.bind('<Configure>', self._on_canvas_configure)
-        
-        # 鼠标滚轮
         self.canvas.bind('<Enter>', lambda e: self._bind_mousewheel())
         self.canvas.bind('<Leave>', lambda e: self._unbind_mousewheel())
         
-        # ===== 填充内容 =====
         main = self.content_frame
         pad_x = 15
         
-        # ===== 页面设置 =====
+        # ============================================================
+        #  快速设置（始终显示）
+        # ============================================================
+        
+        # --- 页面边距 ---
         self._create_section(main, "📄 页面边距 (cm)", pad_x)
         margin_frame = tk.Frame(main, bg=Theme.BG)
-        margin_frame.pack(fill='x', pady=(0, 15), padx=pad_x)
+        margin_frame.pack(fill='x', pady=(0, 12), padx=pad_x)
         
         self.margin_vars = {}
         margins = [('top', '上'), ('bottom', '下'), ('left', '左'), ('right', '右')]
         for i, (key, label) in enumerate(margins):
-            col = i % 2
-            row = i // 2
+            col = i % 4
             f = tk.Frame(margin_frame, bg=Theme.BG)
-            f.grid(row=row, column=col, sticky='w', padx=(0, 30), pady=2)
-            tk.Label(f, text=f"{label}边距:", font=get_font(11), bg=Theme.BG, fg=Theme.TEXT_SECONDARY, width=6, anchor='e').pack(side='left')
-            var = tk.StringVar()
+            f.grid(row=0, column=col, sticky='w', padx=(0, 15), pady=2)
+            tk.Label(f, text=f"{label}:", font=get_font(11), bg=Theme.BG, fg=Theme.TEXT_SECONDARY, anchor='e').pack(side='left')
+            var = tk.StringVar(value=str(self.settings.get('page', {}).get(key, 2.5)))
             self.margin_vars[key] = var
-            entry = tk.Entry(f, textvariable=var, font=get_font(11), width=8, relief='solid', bd=1)
-            entry.pack(side='left', padx=5)
+            tk.Entry(f, textvariable=var, font=get_font(11), width=6, relief='solid', bd=1).pack(side='left', padx=3)
         
-        # ===== 标题格式 =====
-        self._create_section(main, "📝 主标题格式", pad_x)
+        # --- 标题格式 ---
+        self._create_section(main, "📝 标题", pad_x)
         title_frame = tk.Frame(main, bg=Theme.BG)
-        title_frame.pack(fill='x', pady=(0, 15), padx=pad_x)
+        title_frame.pack(fill='x', pady=(0, 12), padx=pad_x)
         
-        row1 = tk.Frame(title_frame, bg=Theme.BG)
-        row1.pack(fill='x', pady=2)
-        tk.Label(row1, text="字体:", font=get_font(11), bg=Theme.BG, fg=Theme.TEXT_SECONDARY, width=8, anchor='e').pack(side='left')
+        row_t = tk.Frame(title_frame, bg=Theme.BG)
+        row_t.pack(fill='x', pady=2)
+        
+        tk.Label(row_t, text="字体:", font=get_font(11), bg=Theme.BG, fg=Theme.TEXT_SECONDARY, width=6, anchor='e').pack(side='left')
         self.title_font_var = tk.StringVar()
-        self._create_combobox(row1, self.title_font_var, COMMON_FONTS_CN, width=18).pack(side='left', padx=5)
+        self._create_combobox(row_t, self.title_font_var, COMMON_FONTS_CN, width=16,
+                              initial_value=self.settings.get('title', {}).get('font_cn', '方正小标宋简体')).pack(side='left', padx=3)
         
-        tk.Label(row1, text="字号:", font=get_font(11), bg=Theme.BG, fg=Theme.TEXT_SECONDARY, width=6, anchor='e').pack(side='left', padx=(15, 0))
+        tk.Label(row_t, text="字号:", font=get_font(11), bg=Theme.BG, fg=Theme.TEXT_SECONDARY, width=5, anchor='e').pack(side='left', padx=(10, 0))
         self.title_size_var = tk.StringVar()
-        self._create_combobox(row1, self.title_size_var, [f"{name}({pt}pt)" for name, pt in FONT_SIZES], width=12).pack(side='left', padx=5)
+        self._create_combobox(row_t, self.title_size_var, [f"{name}({pt}pt)" for name, pt in FONT_SIZES], width=11,
+                              initial_value=self._size_display(self.settings.get('title', {}).get('size', 22))).pack(side='left', padx=3)
         
-        # ===== 主送机关 =====
-        self._create_section(main, "🏢 主送机关", pad_x)
-        recipient_frame = tk.Frame(main, bg=Theme.BG)
-        recipient_frame.pack(fill='x', pady=(0, 15), padx=pad_x)
+        tk.Label(row_t, text="行距:", font=get_font(11), bg=Theme.BG, fg=Theme.TEXT_SECONDARY, width=5, anchor='e').pack(side='left', padx=(10, 0))
+        self.title_line_spacing_var = tk.StringVar(value=str(self.settings.get('title', {}).get('line_spacing', 28) or ''))
+        tk.Entry(row_t, textvariable=self.title_line_spacing_var, font=get_font(11), width=5, relief='solid', bd=1).pack(side='left', padx=3)
+        tk.Label(row_t, text="磅", font=get_font(10), bg=Theme.BG, fg=Theme.TEXT_MUTED).pack(side='left')
         
-        row_r = tk.Frame(recipient_frame, bg=Theme.BG)
-        row_r.pack(fill='x', pady=2)
-        tk.Label(row_r, text="字体:", font=get_font(11), bg=Theme.BG, fg=Theme.TEXT_SECONDARY, width=8, anchor='e').pack(side='left')
-        self.recipient_font_var = tk.StringVar()
-        self._create_combobox(row_r, self.recipient_font_var, COMMON_FONTS_CN, width=18).pack(side='left', padx=5)
+        # --- 一级标题 / 二级标题 ---
+        self._create_section(main, "🔤 各级标题字体", pad_x)
+        heading_frame = tk.Frame(main, bg=Theme.BG)
+        heading_frame.pack(fill='x', pady=(0, 12), padx=pad_x)
         
-        tk.Label(row_r, text="字号:", font=get_font(11), bg=Theme.BG, fg=Theme.TEXT_SECONDARY, width=6, anchor='e').pack(side='left', padx=(15, 0))
-        self.recipient_size_var = tk.StringVar()
-        self._create_combobox(row_r, self.recipient_size_var, [f"{name}({pt}pt)" for name, pt in FONT_SIZES], width=12).pack(side='left', padx=5)
-        
-        # ===== 一级标题 =====
-        self._create_section(main, "1️⃣ 一级标题 (一、二、)", pad_x)
-        h1_frame = tk.Frame(main, bg=Theme.BG)
-        h1_frame.pack(fill='x', pady=(0, 15), padx=pad_x)
-        
-        row_h1 = tk.Frame(h1_frame, bg=Theme.BG)
+        row_h1 = tk.Frame(heading_frame, bg=Theme.BG)
         row_h1.pack(fill='x', pady=2)
-        tk.Label(row_h1, text="字体:", font=get_font(11), bg=Theme.BG, fg=Theme.TEXT_SECONDARY, width=8, anchor='e').pack(side='left')
+        tk.Label(row_h1, text="一级(一、):", font=get_font(11), bg=Theme.BG, fg=Theme.TEXT_SECONDARY, width=10, anchor='e').pack(side='left')
         self.h1_font_var = tk.StringVar()
-        self._create_combobox(row_h1, self.h1_font_var, COMMON_FONTS_CN, width=18).pack(side='left', padx=5)
-        
-        tk.Label(row_h1, text="字号:", font=get_font(11), bg=Theme.BG, fg=Theme.TEXT_SECONDARY, width=6, anchor='e').pack(side='left', padx=(15, 0))
+        self._create_combobox(row_h1, self.h1_font_var, COMMON_FONTS_CN, width=16,
+                              initial_value=self.settings.get('heading1', {}).get('font_cn', '黑体')).pack(side='left', padx=3)
+        tk.Label(row_h1, text="字号:", font=get_font(11), bg=Theme.BG, fg=Theme.TEXT_SECONDARY, width=5, anchor='e').pack(side='left', padx=(10, 0))
         self.h1_size_var = tk.StringVar()
-        self._create_combobox(row_h1, self.h1_size_var, [f"{name}({pt}pt)" for name, pt in FONT_SIZES], width=12).pack(side='left', padx=5)
+        self._create_combobox(row_h1, self.h1_size_var, [f"{name}({pt}pt)" for name, pt in FONT_SIZES], width=11,
+                              initial_value=self._size_display(self.settings.get('heading1', {}).get('size', 16))).pack(side='left', padx=3)
         
-        # ===== 二级标题 =====
-        self._create_section(main, "2️⃣ 二级标题 ((一)(二))", pad_x)
-        h2_frame = tk.Frame(main, bg=Theme.BG)
-        h2_frame.pack(fill='x', pady=(0, 15), padx=pad_x)
-        
-        row_h2 = tk.Frame(h2_frame, bg=Theme.BG)
+        row_h2 = tk.Frame(heading_frame, bg=Theme.BG)
         row_h2.pack(fill='x', pady=2)
-        tk.Label(row_h2, text="字体:", font=get_font(11), bg=Theme.BG, fg=Theme.TEXT_SECONDARY, width=8, anchor='e').pack(side='left')
+        tk.Label(row_h2, text="二级((一)):", font=get_font(11), bg=Theme.BG, fg=Theme.TEXT_SECONDARY, width=10, anchor='e').pack(side='left')
         self.h2_font_var = tk.StringVar()
-        self._create_combobox(row_h2, self.h2_font_var, COMMON_FONTS_CN, width=18).pack(side='left', padx=5)
-        
-        tk.Label(row_h2, text="字号:", font=get_font(11), bg=Theme.BG, fg=Theme.TEXT_SECONDARY, width=6, anchor='e').pack(side='left', padx=(15, 0))
+        self._create_combobox(row_h2, self.h2_font_var, COMMON_FONTS_CN, width=16,
+                              initial_value=self.settings.get('heading2', {}).get('font_cn', '楷体_GB2312')).pack(side='left', padx=3)
+        tk.Label(row_h2, text="字号:", font=get_font(11), bg=Theme.BG, fg=Theme.TEXT_SECONDARY, width=5, anchor='e').pack(side='left', padx=(10, 0))
         self.h2_size_var = tk.StringVar()
-        self._create_combobox(row_h2, self.h2_size_var, [f"{name}({pt}pt)" for name, pt in FONT_SIZES], width=12).pack(side='left', padx=5)
+        self._create_combobox(row_h2, self.h2_size_var, [f"{name}({pt}pt)" for name, pt in FONT_SIZES], width=11,
+                              initial_value=self._size_display(self.settings.get('heading2', {}).get('size', 16))).pack(side='left', padx=3)
         
-        # ===== 三级标题 =====
-        self._create_section(main, "3️⃣ 三级标题 (1.2.3.)", pad_x)
-        h3_frame = tk.Frame(main, bg=Theme.BG)
-        h3_frame.pack(fill='x', pady=(0, 15), padx=pad_x)
-        
-        row_h3 = tk.Frame(h3_frame, bg=Theme.BG)
-        row_h3.pack(fill='x', pady=2)
-        tk.Label(row_h3, text="字体:", font=get_font(11), bg=Theme.BG, fg=Theme.TEXT_SECONDARY, width=8, anchor='e').pack(side='left')
-        self.h3_font_var = tk.StringVar()
-        self._create_combobox(row_h3, self.h3_font_var, COMMON_FONTS_CN, width=18).pack(side='left', padx=5)
-        
-        tk.Label(row_h3, text="字号:", font=get_font(11), bg=Theme.BG, fg=Theme.TEXT_SECONDARY, width=6, anchor='e').pack(side='left', padx=(15, 0))
-        self.h3_size_var = tk.StringVar()
-        self._create_combobox(row_h3, self.h3_size_var, [f"{name}({pt}pt)" for name, pt in FONT_SIZES], width=12).pack(side='left', padx=5)
-        
-        # ===== 四级标题 =====
-        self._create_section(main, "4️⃣ 四级标题 ((1)(2))", pad_x)
-        h4_frame = tk.Frame(main, bg=Theme.BG)
-        h4_frame.pack(fill='x', pady=(0, 15), padx=pad_x)
-        
-        row_h4 = tk.Frame(h4_frame, bg=Theme.BG)
-        row_h4.pack(fill='x', pady=2)
-        tk.Label(row_h4, text="字体:", font=get_font(11), bg=Theme.BG, fg=Theme.TEXT_SECONDARY, width=8, anchor='e').pack(side='left')
-        self.h4_font_var = tk.StringVar()
-        self._create_combobox(row_h4, self.h4_font_var, COMMON_FONTS_CN, width=18).pack(side='left', padx=5)
-        
-        tk.Label(row_h4, text="字号:", font=get_font(11), bg=Theme.BG, fg=Theme.TEXT_SECONDARY, width=6, anchor='e').pack(side='left', padx=(15, 0))
-        self.h4_size_var = tk.StringVar()
-        self._create_combobox(row_h4, self.h4_size_var, [f"{name}({pt}pt)" for name, pt in FONT_SIZES], width=12).pack(side='left', padx=5)
-        
-        # ===== 正文格式 =====
+        # --- 正文格式 ---
         self._create_section(main, "📖 正文格式", pad_x)
         body_frame = tk.Frame(main, bg=Theme.BG)
-        body_frame.pack(fill='x', pady=(0, 15), padx=pad_x)
+        body_frame.pack(fill='x', pady=(0, 12), padx=pad_x)
         
         row_b1 = tk.Frame(body_frame, bg=Theme.BG)
         row_b1.pack(fill='x', pady=2)
-        tk.Label(row_b1, text="字体:", font=get_font(11), bg=Theme.BG, fg=Theme.TEXT_SECONDARY, width=8, anchor='e').pack(side='left')
+        tk.Label(row_b1, text="字体:", font=get_font(11), bg=Theme.BG, fg=Theme.TEXT_SECONDARY, width=6, anchor='e').pack(side='left')
         self.body_font_var = tk.StringVar()
-        self._create_combobox(row_b1, self.body_font_var, COMMON_FONTS_CN, width=18).pack(side='left', padx=5)
+        self._create_combobox(row_b1, self.body_font_var, COMMON_FONTS_CN, width=16,
+                              initial_value=self.settings.get('body', {}).get('font_cn', '仿宋_GB2312')).pack(side='left', padx=3)
         
-        tk.Label(row_b1, text="字号:", font=get_font(11), bg=Theme.BG, fg=Theme.TEXT_SECONDARY, width=6, anchor='e').pack(side='left', padx=(15, 0))
+        tk.Label(row_b1, text="字号:", font=get_font(11), bg=Theme.BG, fg=Theme.TEXT_SECONDARY, width=5, anchor='e').pack(side='left', padx=(10, 0))
         self.body_size_var = tk.StringVar()
-        self._create_combobox(row_b1, self.body_size_var, [f"{name}({pt}pt)" for name, pt in FONT_SIZES], width=12).pack(side='left', padx=5)
+        self._create_combobox(row_b1, self.body_size_var, [f"{name}({pt}pt)" for name, pt in FONT_SIZES], width=11,
+                              initial_value=self._size_display(self.settings.get('body', {}).get('size', 16))).pack(side='left', padx=3)
+        
+        tk.Label(row_b1, text="行距:", font=get_font(11), bg=Theme.BG, fg=Theme.TEXT_SECONDARY, width=5, anchor='e').pack(side='left', padx=(10, 0))
+        self.line_spacing_var = tk.StringVar(value=str(self.settings.get('body', {}).get('line_spacing', 28) or ''))
+        tk.Entry(row_b1, textvariable=self.line_spacing_var, font=get_font(11), width=5, relief='solid', bd=1).pack(side='left', padx=3)
+        tk.Label(row_b1, text="磅", font=get_font(10), bg=Theme.BG, fg=Theme.TEXT_MUTED).pack(side='left')
         
         row_b2 = tk.Frame(body_frame, bg=Theme.BG)
         row_b2.pack(fill='x', pady=2)
-        tk.Label(row_b2, text="行距:", font=get_font(11), bg=Theme.BG, fg=Theme.TEXT_SECONDARY, width=8, anchor='e').pack(side='left')
-        self.line_spacing_var = tk.StringVar()
-        tk.Entry(row_b2, textvariable=self.line_spacing_var, font=get_font(11), width=8, relief='solid', bd=1).pack(side='left', padx=5)
-        tk.Label(row_b2, text="磅", font=get_font(10), bg=Theme.BG, fg=Theme.TEXT_MUTED).pack(side='left')
-        
-        tk.Label(row_b2, text="首行缩进:", font=get_font(11), bg=Theme.BG, fg=Theme.TEXT_SECONDARY, width=8, anchor='e').pack(side='left', padx=(15, 0))
+        tk.Label(row_b2, text="首行缩进:", font=get_font(11), bg=Theme.BG, fg=Theme.TEXT_SECONDARY, width=8, anchor='e').pack(side='left')
         self.indent_var = tk.StringVar()
-        self._create_combobox(row_b2, self.indent_var, ['0字符', '2字符', '4字符'], width=10).pack(side='left', padx=5)
+        _body = self.settings.get('body', {})
+        _indent = _body.get('indent', 32)
+        _bsize = _body.get('size', 16) or 16
+        _indent_chars = int(_indent / _bsize) if _bsize else 2
+        self._create_combobox(row_b2, self.indent_var, ['0字符', '2字符', '4字符'], width=8,
+                              initial_value=f'{_indent_chars}字符').pack(side='left', padx=3)
         
-        # ===== 附件 =====
-        self._create_section(main, "📎 附件", pad_x)
-        attachment_frame = tk.Frame(main, bg=Theme.BG)
-        attachment_frame.pack(fill='x', pady=(0, 15), padx=pad_x)
+        tk.Label(row_b2, text="  ⓘ 正文字体/字号同时应用于: 三/四级标题、落款、附件、结束语",
+                 font=get_font(9), bg=Theme.BG, fg=Theme.TEXT_MUTED).pack(side='left', padx=(10, 0))
         
-        row_a = tk.Frame(attachment_frame, bg=Theme.BG)
-        row_a.pack(fill='x', pady=2)
-        tk.Label(row_a, text="字体:", font=get_font(11), bg=Theme.BG, fg=Theme.TEXT_SECONDARY, width=8, anchor='e').pack(side='left')
-        self.attachment_font_var = tk.StringVar()
-        self._create_combobox(row_a, self.attachment_font_var, COMMON_FONTS_CN, width=18).pack(side='left', padx=5)
+        # --- 表格格式 ---
+        self._create_section(main, "📊 表格格式", pad_x)
+        table_frame = tk.Frame(main, bg=Theme.BG)
+        table_frame.pack(fill='x', pady=(0, 12), padx=pad_x)
         
-        tk.Label(row_a, text="字号:", font=get_font(11), bg=Theme.BG, fg=Theme.TEXT_SECONDARY, width=6, anchor='e').pack(side='left', padx=(15, 0))
-        self.attachment_size_var = tk.StringVar()
-        self._create_combobox(row_a, self.attachment_size_var, [f"{name}({pt}pt)" for name, pt in FONT_SIZES], width=12).pack(side='left', padx=5)
+        row_tbl1 = tk.Frame(table_frame, bg=Theme.BG)
+        row_tbl1.pack(fill='x', pady=2)
         
-        # ===== 结束语 =====
-        self._create_section(main, "🧾 结束语", pad_x)
-        closing_frame = tk.Frame(main, bg=Theme.BG)
-        closing_frame.pack(fill='x', pady=(0, 15), padx=pad_x)
+        tk.Label(row_tbl1, text="字体:", font=get_font(11), bg=Theme.BG, fg=Theme.TEXT_SECONDARY, width=6, anchor='e').pack(side='left')
+        self.table_font_var = tk.StringVar()
+        self._create_combobox(row_tbl1, self.table_font_var, COMMON_FONTS_CN, width=16,
+                              initial_value=self.settings.get('table', {}).get('font_cn', '仿宋_GB2312')).pack(side='left', padx=3)
         
-        row_c = tk.Frame(closing_frame, bg=Theme.BG)
-        row_c.pack(fill='x', pady=2)
-        tk.Label(row_c, text="字体:", font=get_font(11), bg=Theme.BG, fg=Theme.TEXT_SECONDARY, width=8, anchor='e').pack(side='left')
-        self.closing_font_var = tk.StringVar()
-        self._create_combobox(row_c, self.closing_font_var, COMMON_FONTS_CN, width=18).pack(side='left', padx=5)
+        tk.Label(row_tbl1, text="字号:", font=get_font(11), bg=Theme.BG, fg=Theme.TEXT_SECONDARY, width=5, anchor='e').pack(side='left', padx=(10, 0))
+        self.table_size_var = tk.StringVar()
+        self._create_combobox(row_tbl1, self.table_size_var, [f"{name}({pt}pt)" for name, pt in FONT_SIZES], width=11,
+                              initial_value=self._size_display(self.settings.get('table', {}).get('size', 12))).pack(side='left', padx=3)
         
-        tk.Label(row_c, text="字号:", font=get_font(11), bg=Theme.BG, fg=Theme.TEXT_SECONDARY, width=6, anchor='e').pack(side='left', padx=(15, 0))
-        self.closing_size_var = tk.StringVar()
-        self._create_combobox(row_c, self.closing_size_var, [f"{name}({pt}pt)" for name, pt in FONT_SIZES], width=12).pack(side='left', padx=5)
+        tk.Label(row_tbl1, text="行距:", font=get_font(11), bg=Theme.BG, fg=Theme.TEXT_SECONDARY, width=5, anchor='e').pack(side='left', padx=(10, 0))
+        self.table_line_spacing_var = tk.StringVar(value=str(self.settings.get('table', {}).get('line_spacing', 22) or ''))
+        tk.Entry(row_tbl1, textvariable=self.table_line_spacing_var, font=get_font(11), width=5, relief='solid', bd=1).pack(side='left', padx=3)
+        tk.Label(row_tbl1, text="磅", font=get_font(10), bg=Theme.BG, fg=Theme.TEXT_MUTED).pack(side='left')
         
-        # ===== 落款 =====
-        self._create_section(main, "✒️ 落款", pad_x)
-        sign_frame = tk.Frame(main, bg=Theme.BG)
-        sign_frame.pack(fill='x', pady=(0, 15), padx=pad_x)
+        row_tbl2 = tk.Frame(table_frame, bg=Theme.BG)
+        row_tbl2.pack(fill='x', pady=2)
+        self.table_header_bold_var = tk.BooleanVar(value=self.settings.get('table', {}).get('header_bold', True))
+        tk.Checkbutton(
+            row_tbl2, text="表头行加粗", variable=self.table_header_bold_var,
+            font=get_font(11), bg=Theme.BG, fg=Theme.TEXT,
+            activebackground=Theme.BG, selectcolor=Theme.CARD,
+        ).pack(side='left', padx=(6, 0))
         
-        row_s1 = tk.Frame(sign_frame, bg=Theme.BG)
-        row_s1.pack(fill='x', pady=2)
-        tk.Label(row_s1, text="单位字体:", font=get_font(11), bg=Theme.BG, fg=Theme.TEXT_SECONDARY, width=8, anchor='e').pack(side='left')
-        self.signature_font_var = tk.StringVar()
-        self._create_combobox(row_s1, self.signature_font_var, COMMON_FONTS_CN, width=18).pack(side='left', padx=5)
-        
-        tk.Label(row_s1, text="字号:", font=get_font(11), bg=Theme.BG, fg=Theme.TEXT_SECONDARY, width=6, anchor='e').pack(side='left', padx=(15, 0))
-        self.signature_size_var = tk.StringVar()
-        self._create_combobox(row_s1, self.signature_size_var, [f"{name}({pt}pt)" for name, pt in FONT_SIZES], width=12).pack(side='left', padx=5)
-        
-        row_s2 = tk.Frame(sign_frame, bg=Theme.BG)
-        row_s2.pack(fill='x', pady=2)
-        tk.Label(row_s2, text="日期字体:", font=get_font(11), bg=Theme.BG, fg=Theme.TEXT_SECONDARY, width=8, anchor='e').pack(side='left')
-        self.date_font_var = tk.StringVar()
-        self._create_combobox(row_s2, self.date_font_var, COMMON_FONTS_CN, width=18).pack(side='left', padx=5)
-        
-        tk.Label(row_s2, text="字号:", font=get_font(11), bg=Theme.BG, fg=Theme.TEXT_SECONDARY, width=6, anchor='e').pack(side='left', padx=(15, 0))
-        self.date_size_var = tk.StringVar()
-        self._create_combobox(row_s2, self.date_size_var, [f"{name}({pt}pt)" for name, pt in FONT_SIZES], width=12).pack(side='left', padx=5)
-        
-        # ===== 特殊选项 =====
+        # --- 特殊选项 ---
         self._create_section(main, "✨ 特殊选项", pad_x)
         special_frame = tk.Frame(main, bg=Theme.BG)
-        special_frame.pack(fill='x', pady=(0, 20), padx=pad_x)
+        special_frame.pack(fill='x', pady=(0, 12), padx=pad_x)
         
-        self.first_bold_var = tk.BooleanVar()
+        self.first_bold_var = tk.BooleanVar(value=self.settings.get('first_line_bold', False))
         tk.Checkbutton(
             special_frame, text="正文段落首句加粗", variable=self.first_bold_var,
-            font=get_font(13), bg=Theme.BG, fg=Theme.TEXT,
+            font=get_font(12), bg=Theme.BG, fg=Theme.TEXT,
             activebackground=Theme.BG, selectcolor=Theme.CARD,
-            padx=6, pady=4
+            padx=6, pady=3
         ).pack(anchor='w')
         
-        self.page_number_var = tk.BooleanVar()
+        self.page_number_var = tk.BooleanVar(value=self.settings.get('page_number', True))
         tk.Checkbutton(
             special_frame, text="添加页码", variable=self.page_number_var,
-            font=get_font(13), bg=Theme.BG, fg=Theme.TEXT,
+            font=get_font(12), bg=Theme.BG, fg=Theme.TEXT,
             activebackground=Theme.BG, selectcolor=Theme.CARD,
-            padx=6, pady=4
+            padx=6, pady=3
         ).pack(anchor='w')
         
-        # ===== 底部按钮（固定） =====
+        # ============================================================
+        #  高级设置（可折叠）
+        # ============================================================
+        self._create_advanced_section(main, pad_x)
+        
+        # ===== 底部按钮 =====
         btn_frame = tk.Frame(self, bg=Theme.BG)
         btn_frame.pack(fill='x', padx=20, pady=(10, 10))
         
-        size_grip = tk.Sizegrip(btn_frame)
-        size_grip.pack(side='right', padx=(0, 4), pady=(4, 0))
-        
-        # 分隔线
-        tk.Frame(btn_frame, bg=Theme.BORDER, height=1).pack(fill='x', pady=(0, 15))
+        tk.Frame(btn_frame, bg=Theme.BORDER, height=1).pack(fill='x', pady=(0, 12))
         
         btn_row = tk.Frame(btn_frame, bg=Theme.BG)
         btn_row.pack(fill='x')
@@ -523,36 +478,131 @@ class CustomSettingsDialog(tk.Toplevel):
             w.bind('<Enter>', lambda e: (save_btn.configure(bg=Theme.PRIMARY_HOVER), save_label.configure(bg=Theme.PRIMARY_HOVER)))
             w.bind('<Leave>', lambda e: (save_btn.configure(bg=Theme.PRIMARY), save_label.configure(bg=Theme.PRIMARY)))
         
-        # 取消按钮
         cancel_btn = tk.Label(
             btn_row, text="取消", font=get_font(11),
             bg=Theme.BG, fg=Theme.TEXT_SECONDARY, cursor='hand2', padx=15
         )
         cancel_btn.pack(side='right', padx=(0, 15))
         cancel_btn.bind('<Button-1>', lambda e: self._on_close())
+        
+        size_grip = tk.Sizegrip(btn_frame)
+        size_grip.pack(side='right', padx=(0, 2), pady=(2, 0))
+    
+    def _create_advanced_section(self, parent, pad_x):
+        """创建可折叠的高级设置区域"""
+        self._adv_expanded = False
+        
+        # 折叠按钮
+        self._adv_toggle_frame = tk.Frame(parent, bg=Theme.BG)
+        self._adv_toggle_frame.pack(fill='x', padx=pad_x, pady=(8, 0))
+        
+        # 分隔线
+        tk.Frame(self._adv_toggle_frame, bg=Theme.BORDER, height=1).pack(fill='x', pady=(0, 8))
+        
+        self._adv_toggle_label = tk.Label(
+            self._adv_toggle_frame,
+            text="▸ 高级设置 — 按元素类型独立配置字体/行距",
+            font=get_font(12, 'bold'), bg=Theme.BG, fg=Theme.TEXT_SECONDARY,
+            cursor='hand2', anchor='w'
+        )
+        self._adv_toggle_label.pack(anchor='w')
+        self._adv_toggle_label.bind('<Button-1>', lambda e: self._toggle_advanced())
+        self._adv_toggle_label.bind('<Enter>', lambda e: self._adv_toggle_label.configure(fg=Theme.PRIMARY))
+        self._adv_toggle_label.bind('<Leave>', lambda e: self._adv_toggle_label.configure(fg=Theme.TEXT_SECONDARY))
+        
+        # 高级内容区域（初始隐藏）
+        self._adv_content = tk.Frame(parent, bg=Theme.BG)
+        # 不 pack — 初始隐藏
+        
+        tk.Label(
+            self._adv_content,
+            text="ⓘ 此处可逐个元素类型覆盖上方快速设置的值。留空行距表示跟随正文行距。",
+            font=get_font(9), bg=Theme.BG, fg=Theme.TEXT_MUTED
+        ).pack(anchor='w', padx=pad_x, pady=(5, 8))
+        
+        # 元素类型列表
+        elements = [
+            ('recipient', '🏢 主送机关', '仿宋_GB2312', 16),
+            ('heading1',  '1️⃣  一级标题 (一、)', '黑体', 16),
+            ('heading2',  '2️⃣  二级标题 ((一))', '楷体_GB2312', 16),
+            ('heading3',  '3️⃣  三级标题 (1.)', '仿宋_GB2312', 16),
+            ('heading4',  '4️⃣  四级标题 ((1))', '仿宋_GB2312', 16),
+            ('attachment', '📎 附件', '仿宋_GB2312', 16),
+            ('closing',   '🧾 结束语', '仿宋_GB2312', 16),
+            ('signature', '✒️  落款单位', '仿宋_GB2312', 16),
+            ('date',      '📅 落款日期', '仿宋_GB2312', 16),
+        ]
+        
+        for key, label, default_font, default_size in elements:
+            self._create_adv_element_row(self._adv_content, pad_x, key, label, default_font, default_size)
+    
+    def _create_adv_element_row(self, parent, pad_x, key, label, default_font, default_size):
+        """创建高级设置中的一个元素行：中文字体 + 英数字体 + 字号 + 行距"""
+        row = tk.Frame(parent, bg=Theme.BG)
+        row.pack(fill='x', padx=pad_x, pady=2)
+        
+        tk.Label(row, text=label, font=get_font(10), bg=Theme.BG, fg=Theme.TEXT, width=14, anchor='w').pack(side='left')
+        
+        # 中文字体
+        font_var = tk.StringVar()
+        self._create_combobox(row, font_var, COMMON_FONTS_CN, width=12,
+                              initial_value=self.settings.get(key, {}).get('font_cn', default_font)).pack(side='left', padx=3)
+
+        # 英数字体
+        tk.Label(row, text="英数:", font=get_font(10), bg=Theme.BG, fg=Theme.TEXT_SECONDARY).pack(side='left', padx=(6, 0))
+        font_en_var = tk.StringVar()
+        self._create_combobox(row, font_en_var, COMMON_FONTS_EN, width=12,
+                              initial_value=self.settings.get(key, {}).get('font_en', 'Times New Roman')).pack(side='left', padx=3)
+        
+        # 字号
+        tk.Label(row, text="字号:", font=get_font(10), bg=Theme.BG, fg=Theme.TEXT_SECONDARY).pack(side='left', padx=(6, 0))
+        size_var = tk.StringVar()
+        self._create_combobox(row, size_var, [f"{name}({pt}pt)" for name, pt in FONT_SIZES], width=9,
+                              initial_value=self._size_display(self.settings.get(key, {}).get('size', default_size))).pack(side='left', padx=3)
+        
+        # 行距
+        tk.Label(row, text="行距:", font=get_font(10), bg=Theme.BG, fg=Theme.TEXT_SECONDARY).pack(side='left', padx=(6, 0))
+        ls_val = self.settings.get(key, {}).get('line_spacing', '')
+        ls_var = tk.StringVar(value=str(ls_val) if ls_val else '')
+        tk.Entry(row, textvariable=ls_var, font=get_font(10), width=4, relief='solid', bd=1).pack(side='left', padx=3)
+        
+        # 存储变量引用
+        self._adv_vars[key] = {'font': font_var, 'font_en': font_en_var, 'size': size_var, 'line_spacing': ls_var}
+    
+    def _toggle_advanced(self):
+        """切换高级设置的折叠/展开"""
+        if self._adv_expanded:
+            self._adv_content.pack_forget()
+            self._adv_toggle_label.configure(text="▸ 高级设置 — 按元素类型独立配置字体/行距")
+            self._adv_expanded = False
+        else:
+            self._adv_content.pack(fill='x', after=self._adv_toggle_frame, pady=(0, 10))
+            self._adv_toggle_label.configure(text="▾ 高级设置 — 按元素类型独立配置字体/行距")
+            self._adv_expanded = True
+        
+        # 更新滚动区域
+        self.content_frame.update_idletasks()
+        self.canvas.configure(scrollregion=self.canvas.bbox('all'))
+    
+    # ==================== 滚动/辅助方法 ====================
     
     def _on_frame_configure(self, event):
-        """内容大小变化时更新滚动区域"""
         self.canvas.configure(scrollregion=self.canvas.bbox('all'))
     
     def _on_canvas_configure(self, event):
-        """Canvas大小变化时调整内容宽度"""
         self.canvas.itemconfig(self.canvas_window, width=self.content_frame.winfo_reqwidth())
     
     def _bind_mousewheel(self):
-        """绑定鼠标滚轮"""
         self.canvas.bind_all('<MouseWheel>', self._on_mousewheel)
         self.canvas.bind_all('<Button-4>', self._on_mousewheel)
         self.canvas.bind_all('<Button-5>', self._on_mousewheel)
     
     def _unbind_mousewheel(self):
-        """解绑鼠标滚轮"""
         self.canvas.unbind_all('<MouseWheel>')
         self.canvas.unbind_all('<Button-4>')
         self.canvas.unbind_all('<Button-5>')
     
     def _on_mousewheel(self, event):
-        """鼠标滚轮滚动"""
         if event.num == 4:
             self.canvas.yview_scroll(-1, 'units')
         elif event.num == 5:
@@ -561,19 +611,24 @@ class CustomSettingsDialog(tk.Toplevel):
             self.canvas.yview_scroll(int(-1 * (event.delta / 120)), 'units')
     
     def _create_section(self, parent, title, padx=0):
-        """创建分区标题"""
         tk.Label(
             parent, text=title, font=get_font(12, 'bold'),
             bg=Theme.BG, fg=Theme.TEXT
-        ).pack(anchor='w', pady=(10, 5), padx=padx)
+        ).pack(anchor='w', pady=(10, 4), padx=padx)
     
-    def _create_combobox(self, parent, variable, values, width=15):
-        """创建下拉框（使用OptionMenu模拟）"""
+    def _create_combobox(self, parent, variable, values, width=15, initial_value=None):
+        """创建下拉框（OptionMenu）"""
         frame = tk.Frame(parent, bg=Theme.INPUT_BG, highlightbackground=Theme.BORDER, highlightthickness=1)
         
-        # 注意：不在此处设置默认值，由 _load_values 统一设置
-        # OptionMenu 构造函数会自动将 variable 设为第一个值
-        menu = tk.OptionMenu(frame, variable, *values)
+        if initial_value is not None:
+            if initial_value in values:
+                reordered = [initial_value] + [v for v in values if v != initial_value]
+            else:
+                reordered = [initial_value] + list(values)
+        else:
+            reordered = list(values)
+        
+        menu = tk.OptionMenu(frame, variable, *reordered)
         menu.configure(
             font=get_font(10), bg=Theme.INPUT_BG, fg=Theme.TEXT,
             activebackground=Theme.PRIMARY_LIGHT, activeforeground=Theme.TEXT,
@@ -583,11 +638,45 @@ class CustomSettingsDialog(tk.Toplevel):
         menu.pack(fill='x')
         
         return frame
-
+    
+    def _size_display(self, pt_value):
+        """pt值 → 显示字符串"""
+        try:
+            pt_value = float(pt_value)
+        except (TypeError, ValueError):
+            pt_value = 16.0
+        for name, pt in FONT_SIZES:
+            if abs(float(pt) - pt_value) < 0.01:
+                return f"{name}({pt}pt)"
+        return f"自定义({pt_value}pt)"
+    
+    def _get_size_from_var(self, var):
+        """从字号下拉框获取pt值"""
+        text = var.get()
+        for name, pt in FONT_SIZES:
+            if f"{name}({pt}pt)" == text:
+                return pt
+        import re as _re
+        match = _re.search(r'\((\d+(?:\.\d+)?)\s*pt\)', text)
+        if match:
+            return float(match.group(1))
+        return 16
+    
+    def _get_line_spacing(self, var, fallback=28):
+        """从行距输入框获取值，空值返回 fallback"""
+        val = var.get().strip()
+        if not val:
+            return fallback
+        try:
+            return int(float(val))
+        except ValueError:
+            return fallback
+    
+    # ==================== 加载/保存 ====================
+    
     def _load_values(self):
-        """加载当前设置值到UI"""
+        """加载设置到 UI"""
         s = self.settings
-        
         try:
             # 页边距
             for key in ['top', 'bottom', 'left', 'right']:
@@ -596,59 +685,47 @@ class CustomSettingsDialog(tk.Toplevel):
             # 标题
             self.title_font_var.set(s.get('title', {}).get('font_cn', '方正小标宋简体'))
             self._set_size_var(self.title_size_var, s.get('title', {}).get('size', 22))
+            self.title_line_spacing_var.set(str(s.get('title', {}).get('line_spacing', 28) or ''))
             
-            # 主送机关
-            self.recipient_font_var.set(s.get('recipient', {}).get('font_cn', '仿宋_GB2312'))
-            self._set_size_var(self.recipient_size_var, s.get('recipient', {}).get('size', 16))
-            
-            # 一级标题
+            # 一/二级标题
             self.h1_font_var.set(s.get('heading1', {}).get('font_cn', '黑体'))
             self._set_size_var(self.h1_size_var, s.get('heading1', {}).get('size', 16))
-            
-            # 二级标题
             self.h2_font_var.set(s.get('heading2', {}).get('font_cn', '楷体_GB2312'))
             self._set_size_var(self.h2_size_var, s.get('heading2', {}).get('size', 16))
-            
-            # 三级标题
-            self.h3_font_var.set(s.get('heading3', {}).get('font_cn', '仿宋_GB2312'))
-            self._set_size_var(self.h3_size_var, s.get('heading3', {}).get('size', 16))
-            
-            # 四级标题
-            self.h4_font_var.set(s.get('heading4', {}).get('font_cn', '仿宋_GB2312'))
-            self._set_size_var(self.h4_size_var, s.get('heading4', {}).get('size', 16))
             
             # 正文
             self.body_font_var.set(s.get('body', {}).get('font_cn', '仿宋_GB2312'))
             self._set_size_var(self.body_size_var, s.get('body', {}).get('size', 16))
-            self.line_spacing_var.set(str(s.get('body', {}).get('line_spacing', 28)))
+            self.line_spacing_var.set(str(s.get('body', {}).get('line_spacing', 28) or ''))
             
-            body_size = s.get('body', {}).get('size', 16)
+            body_size = s.get('body', {}).get('size', 16) or 16
             indent = s.get('body', {}).get('indent', 32)
             indent_chars = int(indent / body_size) if body_size else 2
             self.indent_var.set(f'{indent_chars}字符')
             
-            # 附件
-            self.attachment_font_var.set(s.get('attachment', {}).get('font_cn', '仿宋_GB2312'))
-            self._set_size_var(self.attachment_size_var, s.get('attachment', {}).get('size', 16))
-            
-            # 结束语
-            self.closing_font_var.set(s.get('closing', {}).get('font_cn', '仿宋_GB2312'))
-            self._set_size_var(self.closing_size_var, s.get('closing', {}).get('size', 16))
-            
-            # 落款
-            self.signature_font_var.set(s.get('signature', {}).get('font_cn', '仿宋_GB2312'))
-            self._set_size_var(self.signature_size_var, s.get('signature', {}).get('size', 16))
-            self.date_font_var.set(s.get('date', {}).get('font_cn', '仿宋_GB2312'))
-            self._set_size_var(self.date_size_var, s.get('date', {}).get('size', 16))
+            # 表格
+            tbl = s.get('table', {})
+            self.table_font_var.set(tbl.get('font_cn', '仿宋_GB2312'))
+            self._set_size_var(self.table_size_var, tbl.get('size', 12))
+            self.table_line_spacing_var.set(str(tbl.get('line_spacing', 22) or ''))
+            self.table_header_bold_var.set(tbl.get('header_bold', True))
             
             # 特殊选项
             self.first_bold_var.set(s.get('first_line_bold', False))
             self.page_number_var.set(s.get('page_number', True))
+            
+            # 高级设置
+            for key, vars_dict in self._adv_vars.items():
+                elem = s.get(key, {})
+                vars_dict['font'].set(elem.get('font_cn', '仿宋_GB2312'))
+                vars_dict['font_en'].set(elem.get('font_en', 'Times New Roman'))
+                self._set_size_var(vars_dict['size'], elem.get('size', 16))
+                ls = elem.get('line_spacing', '')
+                vars_dict['line_spacing'].set(str(ls) if ls else '')
         except Exception as e:
             print(f"[警告] 加载设置到界面失败: {e}")
     
     def _set_size_var(self, var, pt_value):
-        """根据pt值设置字号下拉框"""
         try:
             pt_value = float(pt_value)
         except (TypeError, ValueError):
@@ -657,149 +734,123 @@ class CustomSettingsDialog(tk.Toplevel):
             if abs(float(pt) - pt_value) < 0.01:
                 var.set(f"{name}({pt}pt)")
                 return
-        var.set(f"三号({pt_value}pt)")
-    
-    def _get_size_from_var(self, var):
-        """从字号下拉框获取pt值"""
-        text = var.get()
-        for name, pt in FONT_SIZES:
-            if f"{name}({pt}pt)" == text:
-                return pt
-        # 尝试解析
-        import re
-        match = re.search(r'\((\d+(?:\.\d+)?)\s*pt\)', text)
-        if match:
-            return float(match.group(1))
-        return 16
+        var.set(f"自定义({pt_value}pt)")
     
     def _reset_defaults(self):
-        """恢复默认设置"""
         import copy
         self.settings = copy.deepcopy(DEFAULT_CUSTOM_SETTINGS)
         self._load_values()
     
     def _save(self):
-        """保存设置"""
+        """保存设置 - 快速设置为主，高级设置覆盖"""
         try:
-            # 收集页边距
-            page = {}
-            for key in ['top', 'bottom', 'left', 'right']:
-                page[key] = float(self.margin_vars[key].get())
+            # 收集快速设置值
+            page = {key: float(self.margin_vars[key].get()) for key in ['top', 'bottom', 'left', 'right']}
             
-            # 收集字号
             title_size = self._get_size_from_var(self.title_size_var)
-            recipient_size = self._get_size_from_var(self.recipient_size_var)
             h1_size = self._get_size_from_var(self.h1_size_var)
             h2_size = self._get_size_from_var(self.h2_size_var)
-            h3_size = self._get_size_from_var(self.h3_size_var)
-            h4_size = self._get_size_from_var(self.h4_size_var)
             body_size = self._get_size_from_var(self.body_size_var)
-            attachment_size = self._get_size_from_var(self.attachment_size_var)
-            closing_size = self._get_size_from_var(self.closing_size_var)
-            signature_size = self._get_size_from_var(self.signature_size_var)
-            date_size = self._get_size_from_var(self.date_size_var)
+            body_ls = self._get_line_spacing(self.line_spacing_var, 28)
+            title_ls = self._get_line_spacing(self.title_line_spacing_var, 28)
             
             # 首行缩进
             indent_text = self.indent_var.get()
             indent_chars = int(indent_text.replace('字符', ''))
             indent_pt = indent_chars * body_size
             
-            # 构建设置
+            body_font = self.body_font_var.get()
+            
+            # 构建基础设置 — 正文字体联动到多个元素
             self.settings = {
                 'name': '自定义格式',
                 'page': page,
                 'title': {
-                    'font_cn': self.title_font_var.get(),
-                    'font_en': 'Times New Roman',
-                    'size': title_size,
-                    'bold': False,
-                    'align': 'center',
-                    'indent': 0
+                    'font_cn': self.title_font_var.get(), 'font_en': 'Times New Roman',
+                    'size': title_size, 'bold': False, 'align': 'center', 'indent': 0,
+                    'line_spacing': title_ls, 'space_before': 0, 'space_after': 0
                 },
                 'recipient': {
-                    'font_cn': self.recipient_font_var.get(),
-                    'font_en': 'Times New Roman',
-                    'size': recipient_size,
-                    'bold': False,
-                    'align': 'left',
-                    'indent': 0
+                    'font_cn': body_font, 'font_en': 'Times New Roman',
+                    'size': body_size, 'bold': False, 'align': 'left', 'indent': 0,
+                    'line_spacing': body_ls, 'space_before': 0, 'space_after': 0
                 },
                 'heading1': {
-                    'font_cn': self.h1_font_var.get(),
-                    'font_en': 'Times New Roman',
-                    'size': h1_size,
-                    'bold': False,
-                    'align': 'left',
-                    'indent': indent_pt
+                    'font_cn': self.h1_font_var.get(), 'font_en': 'Times New Roman',
+                    'size': h1_size, 'bold': False, 'align': 'left', 'indent': indent_pt,
+                    'line_spacing': body_ls, 'space_before': 0, 'space_after': 0
                 },
                 'heading2': {
-                    'font_cn': self.h2_font_var.get(),
-                    'font_en': 'Times New Roman',
-                    'size': h2_size,
-                    'bold': False,
-                    'align': 'left',
-                    'indent': indent_pt
+                    'font_cn': self.h2_font_var.get(), 'font_en': 'Times New Roman',
+                    'size': h2_size, 'bold': False, 'align': 'left', 'indent': indent_pt,
+                    'line_spacing': body_ls, 'space_before': 0, 'space_after': 0
                 },
                 'heading3': {
-                    'font_cn': self.h3_font_var.get(),
-                    'font_en': 'Times New Roman',
-                    'size': h3_size,
-                    'bold': False,
-                    'align': 'left',
-                    'indent': indent_pt
+                    'font_cn': body_font, 'font_en': 'Times New Roman',
+                    'size': body_size, 'bold': False, 'align': 'left', 'indent': indent_pt,
+                    'line_spacing': body_ls, 'space_before': 0, 'space_after': 0
                 },
                 'heading4': {
-                    'font_cn': self.h4_font_var.get(),
-                    'font_en': 'Times New Roman',
-                    'size': h4_size,
-                    'bold': False,
-                    'align': 'left',
-                    'indent': indent_pt
+                    'font_cn': body_font, 'font_en': 'Times New Roman',
+                    'size': body_size, 'bold': False, 'align': 'left', 'indent': indent_pt,
+                    'line_spacing': body_ls, 'space_before': 0, 'space_after': 0
                 },
                 'body': {
-                    'font_cn': self.body_font_var.get(),
-                    'font_en': 'Times New Roman',
-                    'size': body_size,
-                    'bold': False,
-                    'align': 'justify',
-                    'indent': indent_pt,
-                    'line_spacing': int(self.line_spacing_var.get())
+                    'font_cn': body_font, 'font_en': 'Times New Roman',
+                    'size': body_size, 'bold': False, 'align': 'justify', 'indent': indent_pt,
+                    'line_spacing': body_ls, 'space_before': 0, 'space_after': 0
                 },
                 'signature': {
-                    'font_cn': self.signature_font_var.get(),
-                    'font_en': 'Times New Roman',
-                    'size': signature_size,
-                    'bold': False,
-                    'align': 'right',
-                    'indent': 0
+                    'font_cn': body_font, 'font_en': 'Times New Roman',
+                    'size': body_size, 'bold': False, 'align': 'right', 'indent': 0,
+                    'line_spacing': body_ls, 'space_before': 0, 'space_after': 0
                 },
                 'date': {
-                    'font_cn': self.date_font_var.get(),
-                    'font_en': 'Times New Roman',
-                    'size': date_size,
-                    'bold': False,
-                    'align': 'right',
-                    'indent': 0
+                    'font_cn': body_font, 'font_en': 'Times New Roman',
+                    'size': body_size, 'bold': False, 'align': 'right', 'indent': 0,
+                    'line_spacing': body_ls, 'space_before': 0, 'space_after': 0
                 },
                 'attachment': {
-                    'font_cn': self.attachment_font_var.get(),
-                    'font_en': 'Times New Roman',
-                    'size': attachment_size,
-                    'bold': False,
-                    'align': 'justify',
-                    'indent': indent_pt
+                    'font_cn': body_font, 'font_en': 'Times New Roman',
+                    'size': body_size, 'bold': False, 'align': 'justify', 'indent': indent_pt,
+                    'line_spacing': body_ls, 'space_before': 0, 'space_after': 0
                 },
                 'closing': {
-                    'font_cn': self.closing_font_var.get(),
-                    'font_en': 'Times New Roman',
-                    'size': closing_size,
-                    'bold': False,
-                    'align': 'left',
-                    'indent': indent_pt
+                    'font_cn': body_font, 'font_en': 'Times New Roman',
+                    'size': body_size, 'bold': False, 'align': 'left', 'indent': indent_pt,
+                    'line_spacing': body_ls, 'space_before': 0, 'space_after': 0
+                },
+                'table': {
+                    'font_cn': self.table_font_var.get(), 'font_en': 'Times New Roman',
+                    'size': self._get_size_from_var(self.table_size_var), 'bold': False,
+                    'line_spacing': self._get_line_spacing(self.table_line_spacing_var, 22),
+                    'first_line_indent': 0,
+                    'header_bold': self.table_header_bold_var.get()
                 },
                 'first_line_bold': self.first_bold_var.get(),
                 'page_number': self.page_number_var.get()
             }
+            
+            # 应用高级设置覆盖（如果用户有修改）
+            for key, vars_dict in self._adv_vars.items():
+                if key in self.settings and isinstance(self.settings[key], dict):
+                    adv_font = vars_dict['font'].get()
+                    adv_font_en = vars_dict['font_en'].get()
+                    adv_size = self._get_size_from_var(vars_dict['size'])
+                    adv_ls_str = vars_dict['line_spacing'].get().strip()
+                    
+                    # 只在高级值与快速设置不同的时候覆盖
+                    if adv_font:
+                        self.settings[key]['font_cn'] = adv_font
+                    if adv_font_en:
+                        self.settings[key]['font_en'] = adv_font_en
+                    if adv_size:
+                        self.settings[key]['size'] = adv_size
+                    if adv_ls_str:
+                        try:
+                            self.settings[key]['line_spacing'] = int(float(adv_ls_str))
+                        except ValueError:
+                            pass
             
             save_custom_settings(self.settings)
             
@@ -820,7 +871,6 @@ class CustomSettingsDialog(tk.Toplevel):
             self._save()
         else:
             self.destroy()
-    
 
 
 # ===== 大尺寸线条图标 =====
