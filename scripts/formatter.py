@@ -23,6 +23,7 @@
 
 import sys
 import re
+from pathlib import Path
 from docx import Document
 from docx.shared import Pt, Cm, Twips, RGBColor
 from docx.enum.text import WD_ALIGN_PARAGRAPH, WD_LINE_SPACING
@@ -31,6 +32,19 @@ from docx.oxml import OxmlElement
 
 # 字号对照：二号=22pt，三号=16pt，小四=12pt
 # 2字符缩进 = 2 × 16pt = 32pt（三号字）
+
+# 自定义配置文件路径
+def load_custom_preset():
+    """加载自定义预设"""
+    custom_config_file = Path(__file__).parent.parent / "custom_settings.json"
+    if custom_config_file.exists():
+        try:
+            import json
+            with open(custom_config_file, 'r', encoding='utf-8') as f:
+                return json.load(f)
+        except Exception:
+            return None
+    return None
 
 PRESETS = {
     'official': {
@@ -343,7 +357,7 @@ def set_font(run, font_cn, font_en, size, bold=False):
     rFonts.set(qn('w:eastAsia'), font_cn)
 
 
-def format_paragraph(para, fmt, para_type, line_spacing_pt=28):
+def format_paragraph(para, fmt, para_type, line_spacing_pt=28, first_line_bold=False):
     """格式化段落"""
     pf = para.paragraph_format
     
@@ -379,9 +393,34 @@ def format_paragraph(para, fmt, para_type, line_spacing_pt=28):
     pf.space_before = Pt(0)
     pf.space_after = Pt(0)
     
-    # 字体
-    for run in para.runs:
-        set_font(run, fmt['font_cn'], fmt['font_en'], fmt['size'], fmt.get('bold', False))
+    # 字体 - 支持首句加粗
+    if first_line_bold and para_type == 'body':
+        # 首句以中文句号“。”作为结束
+        full_text = para.text
+        first_sentence_end = full_text.find('。')
+        if first_sentence_end != -1:
+            split_idx = first_sentence_end + 1
+            first_part = full_text[:split_idx]
+            rest_part = full_text[split_idx:]
+            
+            # 重新构建 runs，确保只加粗首句
+            for run in list(para.runs):
+                para._p.remove(run._r)
+            
+            run1 = para.add_run(first_part)
+            set_font(run1, fmt['font_cn'], fmt['font_en'], fmt['size'], bold=True)
+            
+            if rest_part:
+                run2 = para.add_run(rest_part)
+                set_font(run2, fmt['font_cn'], fmt['font_en'], fmt['size'], fmt.get('bold', False))
+        else:
+            # 没找到中文句号，正常处理
+            for run in para.runs:
+                set_font(run, fmt['font_cn'], fmt['font_en'], fmt['size'], fmt.get('bold', False))
+    else:
+        # 正常处理
+        for run in para.runs:
+            set_font(run, fmt['font_cn'], fmt['font_en'], fmt['size'], fmt.get('bold', False))
 
 
 def add_page_number(doc):
@@ -421,14 +460,26 @@ def add_page_number(doc):
 
 def format_document(input_path, output_path, preset_name='official'):
     """格式化文档"""
-    if preset_name not in PRESETS:
+    # 处理自定义预设
+    if preset_name == 'custom':
+        preset = load_custom_preset()
+        if preset is None:
+            print('Custom preset not found, using official preset')
+            preset = PRESETS['official']
+        else:
+            print(f'Preset: {preset.get("name", "自定义格式")}')
+    elif preset_name not in PRESETS:
         print(f'Unknown preset: {preset_name}')
         print(f'Available: {", ".join(PRESETS.keys())}')
         sys.exit(1)
+    else:
+        preset = PRESETS[preset_name]
+        print(f'Preset: {preset["name"]}')
     
-    preset = PRESETS[preset_name]
-    print(f'Preset: {preset["name"]}')
     print(f'Input: {input_path}')
+    
+    # 获取首句加粗选项
+    first_line_bold = preset.get('first_line_bold', False)
     
     doc = Document(input_path)
     total_paras = len(doc.paragraphs)
@@ -472,7 +523,7 @@ def format_document(input_path, output_path, preset_name='official'):
         fmt_key = para_type if para_type in preset else 'body'
         fmt = preset.get(fmt_key, preset['body'])
         
-        format_paragraph(para, fmt, para_type)
+        format_paragraph(para, fmt, para_type, first_line_bold=first_line_bold)
         stats[para_type] = stats.get(para_type, 0) + 1
         
         # 打印处理信息
@@ -494,8 +545,11 @@ def format_document(input_path, output_path, preset_name='official'):
                         para.paragraph_format.line_spacing = Pt(28)
     
     # 5. 添加页码
-    print('5. Adding page numbers...')
-    add_page_number(doc)
+    if preset.get('page_number', True):
+        print('5. Adding page numbers...')
+        add_page_number(doc)
+    else:
+        print('5. Skipping page numbers...')
     
     # 保存
     doc.save(output_path)

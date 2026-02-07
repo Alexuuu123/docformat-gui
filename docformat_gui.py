@@ -66,6 +66,763 @@ def get_font(size=12, weight='normal'):
     return (Theme.FONT_SERIF[0], size, weight)
 
 
+# ===== 配置管理 =====
+import json
+
+CONFIG_FILE = Path(__file__).parent / "custom_settings.json"
+
+# 常用字体列表
+COMMON_FONTS_CN = [
+    '仿宋_GB2312', '仿宋', '宋体', '黑体', '楷体_GB2312', '楷体',
+    '方正小标宋简体', '方正仿宋_GBK', '华文仿宋', '华文中宋'
+]
+
+COMMON_FONTS_EN = [
+    'Times New Roman', 'Arial', 'Calibri', 'Cambria'
+]
+
+# 字号对照表
+FONT_SIZES = [
+    ('初号', 42), ('小初', 36), ('一号', 26), ('小一', 24),
+    ('二号', 22), ('小二', 18), ('三号', 16), ('小三', 15),
+    ('四号', 14), ('小四', 12), ('五号', 10.5), ('小五', 9),
+]
+
+DEFAULT_CUSTOM_SETTINGS = {
+    'name': '自定义格式',
+    'page': {'top': 3.7, 'bottom': 3.5, 'left': 2.8, 'right': 2.6},
+    'title': {
+        'font_cn': '方正小标宋简体', 'font_en': 'Times New Roman',
+        'size': 22, 'bold': False, 'align': 'center', 'indent': 0
+    },
+    'recipient': {
+        'font_cn': '仿宋_GB2312', 'font_en': 'Times New Roman',
+        'size': 16, 'bold': False, 'align': 'left', 'indent': 0
+    },
+    'heading1': {
+        'font_cn': '黑体', 'font_en': 'Times New Roman',
+        'size': 16, 'bold': False, 'align': 'left', 'indent': 32
+    },
+    'heading2': {
+        'font_cn': '楷体_GB2312', 'font_en': 'Times New Roman',
+        'size': 16, 'bold': False, 'align': 'left', 'indent': 32
+    },
+    'heading3': {
+        'font_cn': '仿宋_GB2312', 'font_en': 'Times New Roman',
+        'size': 16, 'bold': False, 'align': 'left', 'indent': 32
+    },
+    'heading4': {
+        'font_cn': '仿宋_GB2312', 'font_en': 'Times New Roman',
+        'size': 16, 'bold': False, 'align': 'left', 'indent': 32
+    },
+    'body': {
+        'font_cn': '仿宋_GB2312', 'font_en': 'Times New Roman',
+        'size': 16, 'bold': False, 'align': 'justify',
+        'indent': 32, 'line_spacing': 28
+    },
+    'signature': {
+        'font_cn': '仿宋_GB2312', 'font_en': 'Times New Roman',
+        'size': 16, 'bold': False, 'align': 'right', 'indent': 0
+    },
+    'date': {
+        'font_cn': '仿宋_GB2312', 'font_en': 'Times New Roman',
+        'size': 16, 'bold': False, 'align': 'right', 'indent': 0
+    },
+    'attachment': {
+        'font_cn': '仿宋_GB2312', 'font_en': 'Times New Roman',
+        'size': 16, 'bold': False, 'align': 'justify', 'indent': 32
+    },
+    'closing': {
+        'font_cn': '仿宋_GB2312', 'font_en': 'Times New Roman',
+        'size': 16, 'bold': False, 'align': 'left', 'indent': 32
+    },
+    'first_line_bold': False,  # 首句加粗
+    'page_number': True,  # 页码
+}
+
+
+def load_custom_settings():
+    """加载自定义设置"""
+    if CONFIG_FILE.exists():
+        try:
+            with open(CONFIG_FILE, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+                return _merge_settings(DEFAULT_CUSTOM_SETTINGS, data)
+        except Exception as e:
+            print(f"[警告] 加载自定义设置失败: {e}，使用默认设置")
+    return DEFAULT_CUSTOM_SETTINGS.copy()
+
+
+def _merge_settings(defaults, custom):
+    merged = {}
+    for key, value in defaults.items():
+        if key in custom:
+            if isinstance(value, dict) and isinstance(custom.get(key), dict):
+                merged[key] = _merge_settings(value, custom[key])
+            else:
+                merged[key] = custom[key]
+        else:
+            merged[key] = value
+    return merged
+
+
+def save_custom_settings(settings):
+    """保存自定义设置"""
+    try:
+        with open(CONFIG_FILE, 'w', encoding='utf-8') as f:
+            json.dump(settings, f, ensure_ascii=False, indent=2)
+    except Exception as e:
+        print(f"[错误] 保存自定义设置失败: {e}")
+        raise
+
+
+class CustomSettingsDialog(tk.Toplevel):
+    """自定义格式设置弹窗 - 支持滚动和调整大小"""
+    
+    def __init__(self, parent, on_save=None):
+        super().__init__(parent)
+        
+        self.on_save = on_save
+        self.settings = load_custom_settings()
+        
+        # 窗口设置 - 允许调整大小
+        self.title("自定义格式设置")
+        self.geometry("780x820")
+        self.minsize(720, 700)  # 最小尺寸
+        self.configure(bg=Theme.BG)
+        self.resizable(True, True)  # 允许调整大小
+        
+        # 模态窗口
+        self.transient(parent)
+        self.grab_set()
+        self.protocol("WM_DELETE_WINDOW", self._on_close)
+        
+        # 居中显示
+        self.update_idletasks()
+        x = parent.winfo_x() + (parent.winfo_width() - 780) // 2
+        y = parent.winfo_y() + (parent.winfo_height() - 820) // 2
+        self.geometry(f"+{max(0, x)}+{max(0, y)}")
+        
+        self._create_widgets()
+        # 确保所有控件完全渲染后再加载值
+        self.update_idletasks()
+        self._load_values()
+        self.update_idletasks()
+        # 延迟再加载一次，作为双重保险
+        # （某些 tkinter 版本中 OptionMenu 可能在事件循环中重置 textvariable）
+        self.after(50, self._load_values)
+    
+    def _create_widgets(self):
+        """创建控件 - 带滚动条"""
+        # ===== 顶部标题（固定） =====
+        header = tk.Frame(self, bg=Theme.BG)
+        header.pack(fill='x', padx=20, pady=(15, 10))
+        
+        tk.Label(
+            header, text="⚙️ 自定义格式设置", font=get_font(16, 'bold'),
+            bg=Theme.BG, fg=Theme.TEXT
+        ).pack(anchor='w')
+        
+        # 顶部操作区（始终可见）
+        action_bar = tk.Frame(self, bg=Theme.BG)
+        action_bar.pack(fill='x', padx=20, pady=(0, 10))
+        
+        save_top = tk.Frame(action_bar, bg=Theme.PRIMARY, cursor='hand2')
+        save_top.pack(side='right')
+        save_top_label = tk.Label(
+            save_top, text="  保存设置  ", font=get_font(12, 'bold'),
+            bg=Theme.PRIMARY, fg='white', pady=6, cursor='hand2'
+        )
+        save_top_label.pack()
+        for w in [save_top, save_top_label]:
+            w.bind('<Button-1>', lambda e: self._save())
+            w.bind('<Enter>', lambda e: (save_top.configure(bg=Theme.PRIMARY_HOVER), save_top_label.configure(bg=Theme.PRIMARY_HOVER)))
+            w.bind('<Leave>', lambda e: (save_top.configure(bg=Theme.PRIMARY), save_top_label.configure(bg=Theme.PRIMARY)))
+        
+        cancel_top = tk.Label(
+            action_bar, text="取消", font=get_font(11),
+            bg=Theme.BG, fg=Theme.TEXT_SECONDARY, cursor='hand2', padx=10
+        )
+        cancel_top.pack(side='right', padx=(0, 10))
+        cancel_top.bind('<Button-1>', lambda e: self._on_close())
+        
+        # ===== 中间滚动区域 =====
+        scroll_container = tk.Frame(self, bg=Theme.BG)
+        scroll_container.pack(fill='both', expand=True, padx=5)
+        
+        # Canvas + Scrollbar
+        self.canvas = tk.Canvas(scroll_container, bg=Theme.BG, highlightthickness=0)
+        scrollbar = tk.Scrollbar(scroll_container, orient='vertical', command=self.canvas.yview)
+        h_scrollbar = tk.Scrollbar(scroll_container, orient='horizontal', command=self.canvas.xview)
+        
+        self.canvas.configure(yscrollcommand=scrollbar.set, xscrollcommand=h_scrollbar.set)
+        
+        scrollbar.pack(side='right', fill='y')
+        h_scrollbar.pack(side='bottom', fill='x')
+        self.canvas.pack(side='left', fill='both', expand=True)
+        
+        # 内容Frame
+        self.content_frame = tk.Frame(self.canvas, bg=Theme.BG)
+        self.canvas_window = self.canvas.create_window((0, 0), window=self.content_frame, anchor='nw')
+        
+        # 绑定事件
+        self.content_frame.bind('<Configure>', self._on_frame_configure)
+        self.canvas.bind('<Configure>', self._on_canvas_configure)
+        
+        # 鼠标滚轮
+        self.canvas.bind('<Enter>', lambda e: self._bind_mousewheel())
+        self.canvas.bind('<Leave>', lambda e: self._unbind_mousewheel())
+        
+        # ===== 填充内容 =====
+        main = self.content_frame
+        pad_x = 15
+        
+        # ===== 页面设置 =====
+        self._create_section(main, "📄 页面边距 (cm)", pad_x)
+        margin_frame = tk.Frame(main, bg=Theme.BG)
+        margin_frame.pack(fill='x', pady=(0, 15), padx=pad_x)
+        
+        self.margin_vars = {}
+        margins = [('top', '上'), ('bottom', '下'), ('left', '左'), ('right', '右')]
+        for i, (key, label) in enumerate(margins):
+            col = i % 2
+            row = i // 2
+            f = tk.Frame(margin_frame, bg=Theme.BG)
+            f.grid(row=row, column=col, sticky='w', padx=(0, 30), pady=2)
+            tk.Label(f, text=f"{label}边距:", font=get_font(11), bg=Theme.BG, fg=Theme.TEXT_SECONDARY, width=6, anchor='e').pack(side='left')
+            var = tk.StringVar()
+            self.margin_vars[key] = var
+            entry = tk.Entry(f, textvariable=var, font=get_font(11), width=8, relief='solid', bd=1)
+            entry.pack(side='left', padx=5)
+        
+        # ===== 标题格式 =====
+        self._create_section(main, "📝 主标题格式", pad_x)
+        title_frame = tk.Frame(main, bg=Theme.BG)
+        title_frame.pack(fill='x', pady=(0, 15), padx=pad_x)
+        
+        row1 = tk.Frame(title_frame, bg=Theme.BG)
+        row1.pack(fill='x', pady=2)
+        tk.Label(row1, text="字体:", font=get_font(11), bg=Theme.BG, fg=Theme.TEXT_SECONDARY, width=8, anchor='e').pack(side='left')
+        self.title_font_var = tk.StringVar()
+        self._create_combobox(row1, self.title_font_var, COMMON_FONTS_CN, width=18).pack(side='left', padx=5)
+        
+        tk.Label(row1, text="字号:", font=get_font(11), bg=Theme.BG, fg=Theme.TEXT_SECONDARY, width=6, anchor='e').pack(side='left', padx=(15, 0))
+        self.title_size_var = tk.StringVar()
+        self._create_combobox(row1, self.title_size_var, [f"{name}({pt}pt)" for name, pt in FONT_SIZES], width=12).pack(side='left', padx=5)
+        
+        # ===== 主送机关 =====
+        self._create_section(main, "🏢 主送机关", pad_x)
+        recipient_frame = tk.Frame(main, bg=Theme.BG)
+        recipient_frame.pack(fill='x', pady=(0, 15), padx=pad_x)
+        
+        row_r = tk.Frame(recipient_frame, bg=Theme.BG)
+        row_r.pack(fill='x', pady=2)
+        tk.Label(row_r, text="字体:", font=get_font(11), bg=Theme.BG, fg=Theme.TEXT_SECONDARY, width=8, anchor='e').pack(side='left')
+        self.recipient_font_var = tk.StringVar()
+        self._create_combobox(row_r, self.recipient_font_var, COMMON_FONTS_CN, width=18).pack(side='left', padx=5)
+        
+        tk.Label(row_r, text="字号:", font=get_font(11), bg=Theme.BG, fg=Theme.TEXT_SECONDARY, width=6, anchor='e').pack(side='left', padx=(15, 0))
+        self.recipient_size_var = tk.StringVar()
+        self._create_combobox(row_r, self.recipient_size_var, [f"{name}({pt}pt)" for name, pt in FONT_SIZES], width=12).pack(side='left', padx=5)
+        
+        # ===== 一级标题 =====
+        self._create_section(main, "1️⃣ 一级标题 (一、二、)", pad_x)
+        h1_frame = tk.Frame(main, bg=Theme.BG)
+        h1_frame.pack(fill='x', pady=(0, 15), padx=pad_x)
+        
+        row_h1 = tk.Frame(h1_frame, bg=Theme.BG)
+        row_h1.pack(fill='x', pady=2)
+        tk.Label(row_h1, text="字体:", font=get_font(11), bg=Theme.BG, fg=Theme.TEXT_SECONDARY, width=8, anchor='e').pack(side='left')
+        self.h1_font_var = tk.StringVar()
+        self._create_combobox(row_h1, self.h1_font_var, COMMON_FONTS_CN, width=18).pack(side='left', padx=5)
+        
+        tk.Label(row_h1, text="字号:", font=get_font(11), bg=Theme.BG, fg=Theme.TEXT_SECONDARY, width=6, anchor='e').pack(side='left', padx=(15, 0))
+        self.h1_size_var = tk.StringVar()
+        self._create_combobox(row_h1, self.h1_size_var, [f"{name}({pt}pt)" for name, pt in FONT_SIZES], width=12).pack(side='left', padx=5)
+        
+        # ===== 二级标题 =====
+        self._create_section(main, "2️⃣ 二级标题 ((一)(二))", pad_x)
+        h2_frame = tk.Frame(main, bg=Theme.BG)
+        h2_frame.pack(fill='x', pady=(0, 15), padx=pad_x)
+        
+        row_h2 = tk.Frame(h2_frame, bg=Theme.BG)
+        row_h2.pack(fill='x', pady=2)
+        tk.Label(row_h2, text="字体:", font=get_font(11), bg=Theme.BG, fg=Theme.TEXT_SECONDARY, width=8, anchor='e').pack(side='left')
+        self.h2_font_var = tk.StringVar()
+        self._create_combobox(row_h2, self.h2_font_var, COMMON_FONTS_CN, width=18).pack(side='left', padx=5)
+        
+        tk.Label(row_h2, text="字号:", font=get_font(11), bg=Theme.BG, fg=Theme.TEXT_SECONDARY, width=6, anchor='e').pack(side='left', padx=(15, 0))
+        self.h2_size_var = tk.StringVar()
+        self._create_combobox(row_h2, self.h2_size_var, [f"{name}({pt}pt)" for name, pt in FONT_SIZES], width=12).pack(side='left', padx=5)
+        
+        # ===== 三级标题 =====
+        self._create_section(main, "3️⃣ 三级标题 (1.2.3.)", pad_x)
+        h3_frame = tk.Frame(main, bg=Theme.BG)
+        h3_frame.pack(fill='x', pady=(0, 15), padx=pad_x)
+        
+        row_h3 = tk.Frame(h3_frame, bg=Theme.BG)
+        row_h3.pack(fill='x', pady=2)
+        tk.Label(row_h3, text="字体:", font=get_font(11), bg=Theme.BG, fg=Theme.TEXT_SECONDARY, width=8, anchor='e').pack(side='left')
+        self.h3_font_var = tk.StringVar()
+        self._create_combobox(row_h3, self.h3_font_var, COMMON_FONTS_CN, width=18).pack(side='left', padx=5)
+        
+        tk.Label(row_h3, text="字号:", font=get_font(11), bg=Theme.BG, fg=Theme.TEXT_SECONDARY, width=6, anchor='e').pack(side='left', padx=(15, 0))
+        self.h3_size_var = tk.StringVar()
+        self._create_combobox(row_h3, self.h3_size_var, [f"{name}({pt}pt)" for name, pt in FONT_SIZES], width=12).pack(side='left', padx=5)
+        
+        # ===== 四级标题 =====
+        self._create_section(main, "4️⃣ 四级标题 ((1)(2))", pad_x)
+        h4_frame = tk.Frame(main, bg=Theme.BG)
+        h4_frame.pack(fill='x', pady=(0, 15), padx=pad_x)
+        
+        row_h4 = tk.Frame(h4_frame, bg=Theme.BG)
+        row_h4.pack(fill='x', pady=2)
+        tk.Label(row_h4, text="字体:", font=get_font(11), bg=Theme.BG, fg=Theme.TEXT_SECONDARY, width=8, anchor='e').pack(side='left')
+        self.h4_font_var = tk.StringVar()
+        self._create_combobox(row_h4, self.h4_font_var, COMMON_FONTS_CN, width=18).pack(side='left', padx=5)
+        
+        tk.Label(row_h4, text="字号:", font=get_font(11), bg=Theme.BG, fg=Theme.TEXT_SECONDARY, width=6, anchor='e').pack(side='left', padx=(15, 0))
+        self.h4_size_var = tk.StringVar()
+        self._create_combobox(row_h4, self.h4_size_var, [f"{name}({pt}pt)" for name, pt in FONT_SIZES], width=12).pack(side='left', padx=5)
+        
+        # ===== 正文格式 =====
+        self._create_section(main, "📖 正文格式", pad_x)
+        body_frame = tk.Frame(main, bg=Theme.BG)
+        body_frame.pack(fill='x', pady=(0, 15), padx=pad_x)
+        
+        row_b1 = tk.Frame(body_frame, bg=Theme.BG)
+        row_b1.pack(fill='x', pady=2)
+        tk.Label(row_b1, text="字体:", font=get_font(11), bg=Theme.BG, fg=Theme.TEXT_SECONDARY, width=8, anchor='e').pack(side='left')
+        self.body_font_var = tk.StringVar()
+        self._create_combobox(row_b1, self.body_font_var, COMMON_FONTS_CN, width=18).pack(side='left', padx=5)
+        
+        tk.Label(row_b1, text="字号:", font=get_font(11), bg=Theme.BG, fg=Theme.TEXT_SECONDARY, width=6, anchor='e').pack(side='left', padx=(15, 0))
+        self.body_size_var = tk.StringVar()
+        self._create_combobox(row_b1, self.body_size_var, [f"{name}({pt}pt)" for name, pt in FONT_SIZES], width=12).pack(side='left', padx=5)
+        
+        row_b2 = tk.Frame(body_frame, bg=Theme.BG)
+        row_b2.pack(fill='x', pady=2)
+        tk.Label(row_b2, text="行距:", font=get_font(11), bg=Theme.BG, fg=Theme.TEXT_SECONDARY, width=8, anchor='e').pack(side='left')
+        self.line_spacing_var = tk.StringVar()
+        tk.Entry(row_b2, textvariable=self.line_spacing_var, font=get_font(11), width=8, relief='solid', bd=1).pack(side='left', padx=5)
+        tk.Label(row_b2, text="磅", font=get_font(10), bg=Theme.BG, fg=Theme.TEXT_MUTED).pack(side='left')
+        
+        tk.Label(row_b2, text="首行缩进:", font=get_font(11), bg=Theme.BG, fg=Theme.TEXT_SECONDARY, width=8, anchor='e').pack(side='left', padx=(15, 0))
+        self.indent_var = tk.StringVar()
+        self._create_combobox(row_b2, self.indent_var, ['0字符', '2字符', '4字符'], width=10).pack(side='left', padx=5)
+        
+        # ===== 附件 =====
+        self._create_section(main, "📎 附件", pad_x)
+        attachment_frame = tk.Frame(main, bg=Theme.BG)
+        attachment_frame.pack(fill='x', pady=(0, 15), padx=pad_x)
+        
+        row_a = tk.Frame(attachment_frame, bg=Theme.BG)
+        row_a.pack(fill='x', pady=2)
+        tk.Label(row_a, text="字体:", font=get_font(11), bg=Theme.BG, fg=Theme.TEXT_SECONDARY, width=8, anchor='e').pack(side='left')
+        self.attachment_font_var = tk.StringVar()
+        self._create_combobox(row_a, self.attachment_font_var, COMMON_FONTS_CN, width=18).pack(side='left', padx=5)
+        
+        tk.Label(row_a, text="字号:", font=get_font(11), bg=Theme.BG, fg=Theme.TEXT_SECONDARY, width=6, anchor='e').pack(side='left', padx=(15, 0))
+        self.attachment_size_var = tk.StringVar()
+        self._create_combobox(row_a, self.attachment_size_var, [f"{name}({pt}pt)" for name, pt in FONT_SIZES], width=12).pack(side='left', padx=5)
+        
+        # ===== 结束语 =====
+        self._create_section(main, "🧾 结束语", pad_x)
+        closing_frame = tk.Frame(main, bg=Theme.BG)
+        closing_frame.pack(fill='x', pady=(0, 15), padx=pad_x)
+        
+        row_c = tk.Frame(closing_frame, bg=Theme.BG)
+        row_c.pack(fill='x', pady=2)
+        tk.Label(row_c, text="字体:", font=get_font(11), bg=Theme.BG, fg=Theme.TEXT_SECONDARY, width=8, anchor='e').pack(side='left')
+        self.closing_font_var = tk.StringVar()
+        self._create_combobox(row_c, self.closing_font_var, COMMON_FONTS_CN, width=18).pack(side='left', padx=5)
+        
+        tk.Label(row_c, text="字号:", font=get_font(11), bg=Theme.BG, fg=Theme.TEXT_SECONDARY, width=6, anchor='e').pack(side='left', padx=(15, 0))
+        self.closing_size_var = tk.StringVar()
+        self._create_combobox(row_c, self.closing_size_var, [f"{name}({pt}pt)" for name, pt in FONT_SIZES], width=12).pack(side='left', padx=5)
+        
+        # ===== 落款 =====
+        self._create_section(main, "✒️ 落款", pad_x)
+        sign_frame = tk.Frame(main, bg=Theme.BG)
+        sign_frame.pack(fill='x', pady=(0, 15), padx=pad_x)
+        
+        row_s1 = tk.Frame(sign_frame, bg=Theme.BG)
+        row_s1.pack(fill='x', pady=2)
+        tk.Label(row_s1, text="单位字体:", font=get_font(11), bg=Theme.BG, fg=Theme.TEXT_SECONDARY, width=8, anchor='e').pack(side='left')
+        self.signature_font_var = tk.StringVar()
+        self._create_combobox(row_s1, self.signature_font_var, COMMON_FONTS_CN, width=18).pack(side='left', padx=5)
+        
+        tk.Label(row_s1, text="字号:", font=get_font(11), bg=Theme.BG, fg=Theme.TEXT_SECONDARY, width=6, anchor='e').pack(side='left', padx=(15, 0))
+        self.signature_size_var = tk.StringVar()
+        self._create_combobox(row_s1, self.signature_size_var, [f"{name}({pt}pt)" for name, pt in FONT_SIZES], width=12).pack(side='left', padx=5)
+        
+        row_s2 = tk.Frame(sign_frame, bg=Theme.BG)
+        row_s2.pack(fill='x', pady=2)
+        tk.Label(row_s2, text="日期字体:", font=get_font(11), bg=Theme.BG, fg=Theme.TEXT_SECONDARY, width=8, anchor='e').pack(side='left')
+        self.date_font_var = tk.StringVar()
+        self._create_combobox(row_s2, self.date_font_var, COMMON_FONTS_CN, width=18).pack(side='left', padx=5)
+        
+        tk.Label(row_s2, text="字号:", font=get_font(11), bg=Theme.BG, fg=Theme.TEXT_SECONDARY, width=6, anchor='e').pack(side='left', padx=(15, 0))
+        self.date_size_var = tk.StringVar()
+        self._create_combobox(row_s2, self.date_size_var, [f"{name}({pt}pt)" for name, pt in FONT_SIZES], width=12).pack(side='left', padx=5)
+        
+        # ===== 特殊选项 =====
+        self._create_section(main, "✨ 特殊选项", pad_x)
+        special_frame = tk.Frame(main, bg=Theme.BG)
+        special_frame.pack(fill='x', pady=(0, 20), padx=pad_x)
+        
+        self.first_bold_var = tk.BooleanVar()
+        tk.Checkbutton(
+            special_frame, text="正文段落首句加粗", variable=self.first_bold_var,
+            font=get_font(13), bg=Theme.BG, fg=Theme.TEXT,
+            activebackground=Theme.BG, selectcolor=Theme.CARD,
+            padx=6, pady=4
+        ).pack(anchor='w')
+        
+        self.page_number_var = tk.BooleanVar()
+        tk.Checkbutton(
+            special_frame, text="添加页码", variable=self.page_number_var,
+            font=get_font(13), bg=Theme.BG, fg=Theme.TEXT,
+            activebackground=Theme.BG, selectcolor=Theme.CARD,
+            padx=6, pady=4
+        ).pack(anchor='w')
+        
+        # ===== 底部按钮（固定） =====
+        btn_frame = tk.Frame(self, bg=Theme.BG)
+        btn_frame.pack(fill='x', padx=20, pady=(10, 10))
+        
+        size_grip = tk.Sizegrip(btn_frame)
+        size_grip.pack(side='right', padx=(0, 4), pady=(4, 0))
+        
+        # 分隔线
+        tk.Frame(btn_frame, bg=Theme.BORDER, height=1).pack(fill='x', pady=(0, 15))
+        
+        btn_row = tk.Frame(btn_frame, bg=Theme.BG)
+        btn_row.pack(fill='x')
+        
+        # 恢复默认
+        reset_btn = tk.Label(
+            btn_row, text="恢复默认", font=get_font(11),
+            bg=Theme.BG, fg=Theme.TEXT_SECONDARY, cursor='hand2'
+        )
+        reset_btn.pack(side='left')
+        reset_btn.bind('<Button-1>', lambda e: self._reset_defaults())
+        reset_btn.bind('<Enter>', lambda e: reset_btn.configure(fg=Theme.PRIMARY))
+        reset_btn.bind('<Leave>', lambda e: reset_btn.configure(fg=Theme.TEXT_SECONDARY))
+        
+        # 保存按钮
+        save_btn = tk.Frame(btn_row, bg=Theme.PRIMARY, cursor='hand2')
+        save_btn.pack(side='right')
+        save_label = tk.Label(
+            save_btn, text="  保存设置  ", font=get_font(12, 'bold'),
+            bg=Theme.PRIMARY, fg='white', pady=8, cursor='hand2'
+        )
+        save_label.pack()
+        for w in [save_btn, save_label]:
+            w.bind('<Button-1>', lambda e: self._save())
+            w.bind('<Enter>', lambda e: (save_btn.configure(bg=Theme.PRIMARY_HOVER), save_label.configure(bg=Theme.PRIMARY_HOVER)))
+            w.bind('<Leave>', lambda e: (save_btn.configure(bg=Theme.PRIMARY), save_label.configure(bg=Theme.PRIMARY)))
+        
+        # 取消按钮
+        cancel_btn = tk.Label(
+            btn_row, text="取消", font=get_font(11),
+            bg=Theme.BG, fg=Theme.TEXT_SECONDARY, cursor='hand2', padx=15
+        )
+        cancel_btn.pack(side='right', padx=(0, 15))
+        cancel_btn.bind('<Button-1>', lambda e: self._on_close())
+    
+    def _on_frame_configure(self, event):
+        """内容大小变化时更新滚动区域"""
+        self.canvas.configure(scrollregion=self.canvas.bbox('all'))
+    
+    def _on_canvas_configure(self, event):
+        """Canvas大小变化时调整内容宽度"""
+        self.canvas.itemconfig(self.canvas_window, width=self.content_frame.winfo_reqwidth())
+    
+    def _bind_mousewheel(self):
+        """绑定鼠标滚轮"""
+        self.canvas.bind_all('<MouseWheel>', self._on_mousewheel)
+        self.canvas.bind_all('<Button-4>', self._on_mousewheel)
+        self.canvas.bind_all('<Button-5>', self._on_mousewheel)
+    
+    def _unbind_mousewheel(self):
+        """解绑鼠标滚轮"""
+        self.canvas.unbind_all('<MouseWheel>')
+        self.canvas.unbind_all('<Button-4>')
+        self.canvas.unbind_all('<Button-5>')
+    
+    def _on_mousewheel(self, event):
+        """鼠标滚轮滚动"""
+        if event.num == 4:
+            self.canvas.yview_scroll(-1, 'units')
+        elif event.num == 5:
+            self.canvas.yview_scroll(1, 'units')
+        else:
+            self.canvas.yview_scroll(int(-1 * (event.delta / 120)), 'units')
+    
+    def _create_section(self, parent, title, padx=0):
+        """创建分区标题"""
+        tk.Label(
+            parent, text=title, font=get_font(12, 'bold'),
+            bg=Theme.BG, fg=Theme.TEXT
+        ).pack(anchor='w', pady=(10, 5), padx=padx)
+    
+    def _create_combobox(self, parent, variable, values, width=15):
+        """创建下拉框（使用OptionMenu模拟）"""
+        frame = tk.Frame(parent, bg=Theme.INPUT_BG, highlightbackground=Theme.BORDER, highlightthickness=1)
+        
+        # 注意：不在此处设置默认值，由 _load_values 统一设置
+        # OptionMenu 构造函数会自动将 variable 设为第一个值
+        menu = tk.OptionMenu(frame, variable, *values)
+        menu.configure(
+            font=get_font(10), bg=Theme.INPUT_BG, fg=Theme.TEXT,
+            activebackground=Theme.PRIMARY_LIGHT, activeforeground=Theme.TEXT,
+            highlightthickness=0, relief='flat', width=width, anchor='w'
+        )
+        menu['menu'].configure(font=get_font(10), bg=Theme.CARD)
+        menu.pack(fill='x')
+        
+        return frame
+
+    def _load_values(self):
+        """加载当前设置值到UI"""
+        s = self.settings
+        
+        try:
+            # 页边距
+            for key in ['top', 'bottom', 'left', 'right']:
+                self.margin_vars[key].set(str(s.get('page', {}).get(key, 2.5)))
+            
+            # 标题
+            self.title_font_var.set(s.get('title', {}).get('font_cn', '方正小标宋简体'))
+            self._set_size_var(self.title_size_var, s.get('title', {}).get('size', 22))
+            
+            # 主送机关
+            self.recipient_font_var.set(s.get('recipient', {}).get('font_cn', '仿宋_GB2312'))
+            self._set_size_var(self.recipient_size_var, s.get('recipient', {}).get('size', 16))
+            
+            # 一级标题
+            self.h1_font_var.set(s.get('heading1', {}).get('font_cn', '黑体'))
+            self._set_size_var(self.h1_size_var, s.get('heading1', {}).get('size', 16))
+            
+            # 二级标题
+            self.h2_font_var.set(s.get('heading2', {}).get('font_cn', '楷体_GB2312'))
+            self._set_size_var(self.h2_size_var, s.get('heading2', {}).get('size', 16))
+            
+            # 三级标题
+            self.h3_font_var.set(s.get('heading3', {}).get('font_cn', '仿宋_GB2312'))
+            self._set_size_var(self.h3_size_var, s.get('heading3', {}).get('size', 16))
+            
+            # 四级标题
+            self.h4_font_var.set(s.get('heading4', {}).get('font_cn', '仿宋_GB2312'))
+            self._set_size_var(self.h4_size_var, s.get('heading4', {}).get('size', 16))
+            
+            # 正文
+            self.body_font_var.set(s.get('body', {}).get('font_cn', '仿宋_GB2312'))
+            self._set_size_var(self.body_size_var, s.get('body', {}).get('size', 16))
+            self.line_spacing_var.set(str(s.get('body', {}).get('line_spacing', 28)))
+            
+            body_size = s.get('body', {}).get('size', 16)
+            indent = s.get('body', {}).get('indent', 32)
+            indent_chars = int(indent / body_size) if body_size else 2
+            self.indent_var.set(f'{indent_chars}字符')
+            
+            # 附件
+            self.attachment_font_var.set(s.get('attachment', {}).get('font_cn', '仿宋_GB2312'))
+            self._set_size_var(self.attachment_size_var, s.get('attachment', {}).get('size', 16))
+            
+            # 结束语
+            self.closing_font_var.set(s.get('closing', {}).get('font_cn', '仿宋_GB2312'))
+            self._set_size_var(self.closing_size_var, s.get('closing', {}).get('size', 16))
+            
+            # 落款
+            self.signature_font_var.set(s.get('signature', {}).get('font_cn', '仿宋_GB2312'))
+            self._set_size_var(self.signature_size_var, s.get('signature', {}).get('size', 16))
+            self.date_font_var.set(s.get('date', {}).get('font_cn', '仿宋_GB2312'))
+            self._set_size_var(self.date_size_var, s.get('date', {}).get('size', 16))
+            
+            # 特殊选项
+            self.first_bold_var.set(s.get('first_line_bold', False))
+            self.page_number_var.set(s.get('page_number', True))
+        except Exception as e:
+            print(f"[警告] 加载设置到界面失败: {e}")
+    
+    def _set_size_var(self, var, pt_value):
+        """根据pt值设置字号下拉框"""
+        try:
+            pt_value = float(pt_value)
+        except (TypeError, ValueError):
+            pt_value = 16.0
+        for name, pt in FONT_SIZES:
+            if abs(float(pt) - pt_value) < 0.01:
+                var.set(f"{name}({pt}pt)")
+                return
+        var.set(f"三号({pt_value}pt)")
+    
+    def _get_size_from_var(self, var):
+        """从字号下拉框获取pt值"""
+        text = var.get()
+        for name, pt in FONT_SIZES:
+            if f"{name}({pt}pt)" == text:
+                return pt
+        # 尝试解析
+        import re
+        match = re.search(r'\((\d+(?:\.\d+)?)\s*pt\)', text)
+        if match:
+            return float(match.group(1))
+        return 16
+    
+    def _reset_defaults(self):
+        """恢复默认设置"""
+        import copy
+        self.settings = copy.deepcopy(DEFAULT_CUSTOM_SETTINGS)
+        self._load_values()
+    
+    def _save(self):
+        """保存设置"""
+        try:
+            # 收集页边距
+            page = {}
+            for key in ['top', 'bottom', 'left', 'right']:
+                page[key] = float(self.margin_vars[key].get())
+            
+            # 收集字号
+            title_size = self._get_size_from_var(self.title_size_var)
+            recipient_size = self._get_size_from_var(self.recipient_size_var)
+            h1_size = self._get_size_from_var(self.h1_size_var)
+            h2_size = self._get_size_from_var(self.h2_size_var)
+            h3_size = self._get_size_from_var(self.h3_size_var)
+            h4_size = self._get_size_from_var(self.h4_size_var)
+            body_size = self._get_size_from_var(self.body_size_var)
+            attachment_size = self._get_size_from_var(self.attachment_size_var)
+            closing_size = self._get_size_from_var(self.closing_size_var)
+            signature_size = self._get_size_from_var(self.signature_size_var)
+            date_size = self._get_size_from_var(self.date_size_var)
+            
+            # 首行缩进
+            indent_text = self.indent_var.get()
+            indent_chars = int(indent_text.replace('字符', ''))
+            indent_pt = indent_chars * body_size
+            
+            # 构建设置
+            self.settings = {
+                'name': '自定义格式',
+                'page': page,
+                'title': {
+                    'font_cn': self.title_font_var.get(),
+                    'font_en': 'Times New Roman',
+                    'size': title_size,
+                    'bold': False,
+                    'align': 'center',
+                    'indent': 0
+                },
+                'recipient': {
+                    'font_cn': self.recipient_font_var.get(),
+                    'font_en': 'Times New Roman',
+                    'size': recipient_size,
+                    'bold': False,
+                    'align': 'left',
+                    'indent': 0
+                },
+                'heading1': {
+                    'font_cn': self.h1_font_var.get(),
+                    'font_en': 'Times New Roman',
+                    'size': h1_size,
+                    'bold': False,
+                    'align': 'left',
+                    'indent': indent_pt
+                },
+                'heading2': {
+                    'font_cn': self.h2_font_var.get(),
+                    'font_en': 'Times New Roman',
+                    'size': h2_size,
+                    'bold': False,
+                    'align': 'left',
+                    'indent': indent_pt
+                },
+                'heading3': {
+                    'font_cn': self.h3_font_var.get(),
+                    'font_en': 'Times New Roman',
+                    'size': h3_size,
+                    'bold': False,
+                    'align': 'left',
+                    'indent': indent_pt
+                },
+                'heading4': {
+                    'font_cn': self.h4_font_var.get(),
+                    'font_en': 'Times New Roman',
+                    'size': h4_size,
+                    'bold': False,
+                    'align': 'left',
+                    'indent': indent_pt
+                },
+                'body': {
+                    'font_cn': self.body_font_var.get(),
+                    'font_en': 'Times New Roman',
+                    'size': body_size,
+                    'bold': False,
+                    'align': 'justify',
+                    'indent': indent_pt,
+                    'line_spacing': int(self.line_spacing_var.get())
+                },
+                'signature': {
+                    'font_cn': self.signature_font_var.get(),
+                    'font_en': 'Times New Roman',
+                    'size': signature_size,
+                    'bold': False,
+                    'align': 'right',
+                    'indent': 0
+                },
+                'date': {
+                    'font_cn': self.date_font_var.get(),
+                    'font_en': 'Times New Roman',
+                    'size': date_size,
+                    'bold': False,
+                    'align': 'right',
+                    'indent': 0
+                },
+                'attachment': {
+                    'font_cn': self.attachment_font_var.get(),
+                    'font_en': 'Times New Roman',
+                    'size': attachment_size,
+                    'bold': False,
+                    'align': 'justify',
+                    'indent': indent_pt
+                },
+                'closing': {
+                    'font_cn': self.closing_font_var.get(),
+                    'font_en': 'Times New Roman',
+                    'size': closing_size,
+                    'bold': False,
+                    'align': 'left',
+                    'indent': indent_pt
+                },
+                'first_line_bold': self.first_bold_var.get(),
+                'page_number': self.page_number_var.get()
+            }
+            
+            save_custom_settings(self.settings)
+            
+            if self.on_save:
+                self.on_save(self.settings)
+            
+            messagebox.showinfo("保存成功", "自定义格式设置已保存", parent=self)
+            self.destroy()
+            
+        except ValueError as e:
+            messagebox.showerror("输入错误", f"请检查输入的数值是否正确：\n{e}", parent=self)
+    
+    def _on_close(self):
+        result = messagebox.askyesnocancel("保存设置", "是否保存当前设置？", parent=self)
+        if result is None:
+            return
+        if result:
+            self._save()
+        else:
+            self.destroy()
+    
+
+
 # ===== 大尺寸线条图标 =====
 class Icons:
     """用 Canvas 绘制的线条图标 - 48px 大尺寸"""
@@ -361,12 +1118,13 @@ class SelectableCard(tk.Frame):
 class PresetCard(tk.Frame):
     """格式预设卡片"""
     
-    def __init__(self, parent, text, value, variable, **kwargs):
+    def __init__(self, parent, text, value, variable, command=None, **kwargs):
         super().__init__(parent, bg=Theme.CARD, **kwargs)
         
         self.value = value
         self.variable = variable
         self.selected = False
+        self.command = command  # 自定义点击命令
         
         self.configure(
             highlightbackground=Theme.BORDER,
@@ -397,6 +1155,9 @@ class PresetCard(tk.Frame):
     
     def _on_click(self, event=None):
         self.variable.set(self.value)
+        # 如果有自定义命令，执行它
+        if self.command:
+            self.command()
     
     def _on_enter(self, event=None):
         if not self.selected:
@@ -750,6 +1511,7 @@ class DocFormatApp:
         preset_section = tk.Frame(content, bg=Theme.BG)
         preset_section.pack(fill='x', pady=(0, Theme.SPACE_LG))
         
+        # 标题行
         tk.Label(
             preset_section,
             text="格式预设",
@@ -771,6 +1533,15 @@ class DocFormatApp:
             card = PresetCard(preset_row, text, value, self.preset)
             card.pack(side='left', padx=(0 if i == 0 else Theme.SPACE_SM, 0))
             self.preset_cards.append(card)
+        
+        # 自定义卡片 - 点击直接打开设置窗口
+        self.custom_card = PresetCard(
+            preset_row, '⚙️ 自定义', 'custom', self.preset,
+            command=self._open_custom_settings  # 点击时打开设置窗口
+        )
+        self.custom_card.pack(side='left', padx=(Theme.SPACE_SM, 0))
+        self.preset_cards.append(self.custom_card)
+        
         
         # ===== 5. 执行按钮 =====
         self.run_btn = tk.Frame(content, bg=Theme.PRIMARY, cursor='hand2')
@@ -874,10 +1645,24 @@ class DocFormatApp:
         for card in self.preset_cards:
             card.set_enabled(enabled)
     
+    def _open_custom_settings(self):
+        """打开自定义设置窗口"""
+        def on_save(settings):
+            self.preset.set('custom')
+            self.log_panel.log("自定义格式设置已保存", 'success')
+        
+        CustomSettingsDialog(self.root, on_save=on_save)
+    
     def browse_input(self):
         filename = filedialog.askopenfilename(
             title="选择Word文档",
-            filetypes=[("Word文档", "*.docx"), ("所有文件", "*.*")]
+            filetypes=[
+                ("所有支持格式", "*.docx *.doc *.wps"),
+                ("Word 文档 (.docx)", "*.docx"),
+                ("Word 97-2003 (.doc)", "*.doc"),
+                ("WPS 文档 (.wps)", "*.wps"),
+                ("所有文件", "*.*"),
+            ]
         )
         if filename:
             self.input_file.set(filename)
@@ -885,13 +1670,19 @@ class DocFormatApp:
             output_name = f"{p.stem}_processed{p.suffix}"
             self.output_file.set(str(p.parent / output_name))
             self.log_panel.log(f"已选择: {p.name}", 'info')
+            self.log_panel.log(f"输出格式已自动设置为: {p.suffix or '.docx'}", 'info')
             self.result_panel.reset()
     
     def browse_output(self):
         filename = filedialog.asksaveasfilename(
             title="保存为",
             defaultextension=".docx",
-            filetypes=[("Word文档", "*.docx")]
+            filetypes=[
+                ("所有支持格式", "*.docx *.doc *.wps"),   # ← 默认选中，空格分隔
+                ("Word 文档 (.docx)", "*.docx"),
+                ("Word 97-2003 (.doc)", "*.doc"),
+                ("WPS 文档 (.wps)", "*.wps"),
+            ]
         )
         if filename:
             self.output_file.set(filename)
@@ -923,11 +1714,38 @@ class DocFormatApp:
         thread.start()
     
     def _do_operation(self, input_path, output_path, mode):
+        temp_docx = None
+        temp_output_docx = None
         try:
             from docx import Document
             
             self.log_panel.log(f"\n{'─' * 35}", 'info')
             self.log_panel.log(f"开始处理: {Path(input_path).name}", 'info')
+            
+            ext = Path(input_path).suffix.lower()
+            if ext in ('.doc', '.wps'):
+                self.log_panel.log(f"检测到 {ext} 格式，正在转换...", 'info')
+                from scripts.converter import convert_to_docx
+                try:
+                    temp_docx = convert_to_docx(input_path)
+                except RuntimeError as e:
+                    self.root.after(0, lambda: messagebox.showerror(
+                        "转换失败",
+                        "未检测到 WPS 或 Microsoft Office，请先安装后再试。"
+                    ))
+                    raise
+                input_path = temp_docx
+                self.log_panel.log("转换成功", 'success')
+            
+            output_ext = Path(output_path).suffix.lower()
+            needs_convert_back = output_ext in ('.doc', '.wps')
+            if needs_convert_back:
+                import tempfile
+                with tempfile.NamedTemporaryFile(suffix='.docx', delete=False) as tmp:
+                    temp_output_docx = tmp.name
+                output_path_docx = temp_output_docx
+            else:
+                output_path_docx = output_path
             
             if mode == 'analyze':
                 doc = Document(input_path)
@@ -941,7 +1759,7 @@ class DocFormatApp:
                 self.log_panel.log("诊断完成", 'success')
                 
             elif mode == 'punctuation':
-                self._run_punctuation(input_path, output_path)
+                self._run_punctuation(input_path, output_path_docx)
                 self.root.after(0, lambda: self.result_panel.show_success(
                     "标点修复完成", Path(output_path).name
                 ))
@@ -955,7 +1773,7 @@ class DocFormatApp:
                 self._run_punctuation(input_path, temp_path, quiet=True)
                 
                 self.log_panel.log("步骤 2/2: 应用格式...", 'info')
-                self._run_format(temp_path, output_path)
+                self._run_format(temp_path, output_path_docx)
                 
                 os.unlink(temp_path)
                 
@@ -963,21 +1781,76 @@ class DocFormatApp:
                     "处理完成", Path(output_path).name
                 ))
             
+            if mode != 'analyze' and needs_convert_back:
+                from scripts.converter import convert_from_docx
+                try:
+                    self.log_panel.log(f"正在转换回 {output_ext} 格式...", 'info')
+                    actual_output = convert_from_docx(
+                        output_path_docx, output_path,
+                        format=output_ext.lstrip('.')
+                    )
+                    # convert_from_docx 可能回退到 .doc（当系统没有 WPS Office 时）
+                    if actual_output and actual_output != output_path:
+                        output_path = actual_output
+                        self.log_panel.log(
+                            f"保存 {output_ext} 需要安装 WPS Office，已自动保存为 .doc 格式",
+                            'info'
+                        )
+                except RuntimeError as e:
+                    if "未检测到" in str(e):
+                        self.root.after(0, lambda: messagebox.showerror(
+                            "转换失败",
+                            "未检测到 WPS 或 Microsoft Office，请先安装后再试。"
+                        ))
+                        raise
+                    # 其他 RuntimeError：回退保存为 .docx
+                    self._fallback_to_docx(output_path, output_path_docx)
+                    output_path = str(Path(output_path).with_suffix('.docx'))
+                except Exception as e:
+                    # COM 错误等：回退保存为 .docx
+                    self.log_panel.log(f"转换回 {output_ext} 失败: {e}", 'info')
+                    self._fallback_to_docx(output_path, output_path_docx)
+                    output_path = str(Path(output_path).with_suffix('.docx'))
+                finally:
+                    if os.path.exists(output_path_docx) and output_path_docx != output_path:
+                        try:
+                            os.unlink(output_path_docx)
+                        except Exception:
+                            pass
+            
             self.log_panel.log("全部完成", 'success')
             
             if mode != 'analyze':
+                final_path = output_path  # 捕获到局部变量供 lambda 使用
                 self.root.after(0, lambda: messagebox.showinfo(
-                    "完成", f"文件已保存至:\n{output_path}"
+                    "完成", f"文件已保存至:\n{final_path}"
                 ))
         
         except Exception as e:
-            self.log_panel.log(f"错误: {str(e)}", 'error')
+            error_msg = str(e)  # 先保存错误信息
+            self.log_panel.log(f"错误: {error_msg}", 'error')
             import traceback
             self.log_panel.log(traceback.format_exc(), 'error')
-            self.root.after(0, lambda: messagebox.showerror("错误", str(e)))
+            self.root.after(0, lambda msg=error_msg: messagebox.showerror("错误", msg))
         
         finally:
+            if temp_docx and os.path.exists(temp_docx):
+                os.unlink(temp_docx)
+            if temp_output_docx and os.path.exists(temp_output_docx):
+                os.unlink(temp_output_docx)
             self.root.after(0, self._reset_btn)
+    
+    def _fallback_to_docx(self, original_output_path, docx_source_path):
+        """转换回原格式失败时，将已处理好的 .docx 直接保存"""
+        import shutil
+        fallback_path = str(Path(original_output_path).with_suffix('.docx'))
+        try:
+            shutil.copy2(docx_source_path, fallback_path)
+            self.log_panel.log(
+                f"已回退保存为 .docx 格式: {Path(fallback_path).name}", 'info'
+            )
+        except Exception as e:
+            self.log_panel.log(f"回退保存也失败: {e}", 'error')
     
     def _reset_btn(self):
         self.run_btn.configure(bg=Theme.PRIMARY)
@@ -1017,7 +1890,15 @@ class DocFormatApp:
         finally:
             sys.stdout = old_stdout
         
-        self.log_panel.log(f"应用格式: {PRESETS[preset_name]['name']}", 'success')
+        if preset_name == 'custom':
+            try:
+                custom = load_custom_settings()
+                preset_label = custom.get('name', '自定义格式') if custom else '自定义格式'
+            except Exception:
+                preset_label = '自定义格式'
+        else:
+            preset_label = PRESETS.get(preset_name, {}).get('name', preset_name)
+        self.log_panel.log(f"应用格式: {preset_label}", 'success')
 
 
 def main():
